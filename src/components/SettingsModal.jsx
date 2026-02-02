@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { X, Sun, Moon, Monitor, Check, ChevronUp, ChevronDown, GripVertical } from 'lucide-react'
+import { X, Sun, Moon, Monitor, Check, ChevronUp, ChevronDown, Eye, EyeOff } from 'lucide-react'
 import { ARXIV_CATEGORIES } from '../hooks/useArxivScraper'
 
 const AVAILABLE_CATEGORIES = [
@@ -20,11 +20,13 @@ const THEME_OPTIONS = [
 ]
 
 const ALL_TABS = {
-  wiki: { label: 'Wikipedia', emoji: '📖' },
-  arxiv: { label: 'arXiv', emoji: '📄' },
-  art: { label: 'Art', emoji: '🎨' },
-  nasa: { label: 'NASA', emoji: '🚀' },
-  history: { label: 'On This Day', emoji: '📅' },
+  wiki: { label: 'Wikipedia', emoji: '📖', description: 'Random Wikipedia articles' },
+  arxiv: { label: 'arXiv', emoji: '📄', description: 'Open-access research papers' },
+  medrxiv: { label: 'medRxiv', emoji: '🏥', description: 'Health sciences preprints' },
+  biorxiv: { label: 'bioRxiv', emoji: '🧬', description: 'Biology preprints' },
+  art: { label: 'Art', emoji: '🖼️', description: 'Art Institute of Chicago' },
+  nasa: { label: 'NASA', emoji: '🚀', description: 'Astronomy Picture of the Day' },
+  history: { label: 'On This Day', emoji: '📅', description: 'Historical events' },
 }
 
 export default function SettingsModal({ 
@@ -37,7 +39,9 @@ export default function SettingsModal({
   arxivCategory,
   setArxivCategory,
   tabOrder,
-  setTabOrder
+  setTabOrder,
+  enabledTabs,
+  toggleTab
 }) {
   const modalRef = useRef(null)
 
@@ -70,6 +74,9 @@ export default function SettingsModal({
     ;[newOrder[index], newOrder[newIndex]] = [newOrder[newIndex], newOrder[index]]
     setTabOrder(newOrder)
   }
+
+  const isTabEnabled = (tabId) => enabledTabs.includes(tabId)
+  const canDisable = enabledTabs.length > 1
 
   if (!isOpen) return null
 
@@ -122,28 +129,49 @@ export default function SettingsModal({
             </div>
           </section>
 
-          {/* Tab Order */}
+          {/* Content Sources */}
           <section>
             <h3 className="font-sans text-sm font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-400 mb-2">
-              Tab Order
+              Content Sources
             </h3>
             <p className="font-sans text-sm text-ink-500 dark:text-ink-500 mb-4">
-              Reorder tabs using the arrows
+              Enable/disable sources and reorder tabs
             </p>
             <div className="space-y-2">
               {tabOrder.map((tabId, index) => {
                 const tab = ALL_TABS[tabId]
                 if (!tab) return null
+                const enabled = isTabEnabled(tabId)
                 return (
                   <div
                     key={tabId}
-                    className="flex items-center gap-3 p-3 bg-ink-50 dark:bg-ink-800/50 rounded-lg"
+                    className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
+                      enabled 
+                        ? 'bg-ink-50 dark:bg-ink-800/50 border-ink-200 dark:border-ink-700' 
+                        : 'bg-ink-50/50 dark:bg-ink-800/20 border-ink-100 dark:border-ink-800 opacity-60'
+                    }`}
                   >
-                    <GripVertical className="w-4 h-4 text-ink-300 dark:text-ink-600" />
+                    <button
+                      onClick={() => toggleTab(tabId)}
+                      disabled={enabled && !canDisable}
+                      className={`p-1.5 rounded transition-colors ${
+                        enabled 
+                          ? 'text-ink-700 dark:text-ink-300 hover:bg-ink-200 dark:hover:bg-ink-700' 
+                          : 'text-ink-400 dark:text-ink-600 hover:bg-ink-200 dark:hover:bg-ink-700'
+                      } ${enabled && !canDisable ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      title={enabled ? (canDisable ? 'Disable' : 'At least one source required') : 'Enable'}
+                    >
+                      {enabled ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                    </button>
                     <span className="text-lg">{tab.emoji}</span>
-                    <span className="flex-1 font-sans text-sm font-medium text-ink-900 dark:text-ink-100">
-                      {tab.label}
-                    </span>
+                    <div className="flex-1 min-w-0">
+                      <span className="font-sans text-sm font-medium text-ink-900 dark:text-ink-100 block">
+                        {tab.label}
+                      </span>
+                      <span className="font-sans text-xs text-ink-500 dark:text-ink-400 truncate block">
+                        {tab.description}
+                      </span>
+                    </div>
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => moveTab(index, -1)}
@@ -254,7 +282,7 @@ export default function SettingsModal({
               Data Sources
             </h3>
             <p className="font-sans text-sm text-ink-500 dark:text-ink-500 leading-relaxed">
-              WikiWisch aggregates content from Wikipedia, arXiv, Art Institute of Chicago, and NASA. 
+              WikiWisch aggregates content from Wikipedia, arXiv, medRxiv, bioRxiv, Art Institute of Chicago, NASA APOD, and Wikimedia. 
               All data is fetched in real-time. Your preferences are stored locally.
             </p>
           </section>

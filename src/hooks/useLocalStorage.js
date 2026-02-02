@@ -6,9 +6,11 @@ const defaultState = {
   theme: 'system',
   categories: ['science', 'history', 'technology', 'arts', 'geography'],
   arxivCategory: 'cs.AI',
-  tabOrder: ['wiki', 'arxiv', 'art', 'nasa', 'history'],
+  tabOrder: ['wiki', 'arxiv', 'medrxiv', 'biorxiv', 'art', 'nasa', 'history'],
+  enabledTabs: ['wiki', 'arxiv', 'medrxiv', 'art', 'nasa', 'history'], // biorxiv not enabled by default
   bookmarks: [],
   arxivBookmarks: [],
+  biorxivBookmarks: [], // covers both medrxiv and biorxiv
   artBookmarks: [],
   nasaBookmarks: [],
   historyBookmarks: [],
@@ -60,6 +62,25 @@ export function useLocalStorage() {
     setState((prev) => ({ ...prev, arxivCategory }))
   }, [])
 
+  // Toggle tab enabled/disabled (at least one must remain enabled)
+  const toggleTab = useCallback((tabId) => {
+    setState((prev) => {
+      const enabledTabs = prev.enabledTabs || defaultState.enabledTabs
+      const isEnabled = enabledTabs.includes(tabId)
+      
+      // Don't disable if it's the last enabled tab
+      if (isEnabled && enabledTabs.length <= 1) {
+        return prev
+      }
+      
+      const newEnabledTabs = isEnabled
+        ? enabledTabs.filter((t) => t !== tabId)
+        : [...enabledTabs, tabId]
+      
+      return { ...prev, enabledTabs: newEnabledTabs }
+    })
+  }, [])
+
   // Wikipedia bookmarks
   const addBookmark = useCallback((article) => {
     setState((prev) => {
@@ -101,6 +122,28 @@ export function useLocalStorage() {
 
   const isArxivBookmarked = useCallback((id) => state.arxivBookmarks.some((b) => b.id === id), [state.arxivBookmarks])
   const clearAllArxivBookmarks = useCallback(() => setState((prev) => ({ ...prev, arxivBookmarks: [] })), [])
+
+  // bioRxiv/medRxiv bookmarks
+  const addBiorxivBookmark = useCallback((paper) => {
+    setState((prev) => {
+      const biorxivBookmarks = prev.biorxivBookmarks || []
+      if (biorxivBookmarks.some((b) => b.id === paper.id)) return prev
+      return {
+        ...prev,
+        biorxivBookmarks: [
+          { id: paper.id, title: paper.title, authors: paper.authors?.slice(0, 3), server: paper.server, absLink: paper.absLink, savedAt: Date.now() },
+          ...biorxivBookmarks,
+        ],
+      }
+    })
+  }, [])
+
+  const removeBiorxivBookmark = useCallback((id) => {
+    setState((prev) => ({ ...prev, biorxivBookmarks: (prev.biorxivBookmarks || []).filter((b) => b.id !== id) }))
+  }, [])
+
+  const isBiorxivBookmarked = useCallback((id) => (state.biorxivBookmarks || []).some((b) => b.id === id), [state.biorxivBookmarks])
+  const clearAllBiorxivBookmarks = useCallback(() => setState((prev) => ({ ...prev, biorxivBookmarks: [] })), [])
 
   // Art bookmarks
   const addArtBookmark = useCallback((artwork) => {
@@ -170,8 +213,10 @@ export function useLocalStorage() {
     categories: state.categories,
     arxivCategory: state.arxivCategory || defaultState.arxivCategory,
     tabOrder: state.tabOrder || defaultState.tabOrder,
+    enabledTabs: state.enabledTabs || defaultState.enabledTabs,
     bookmarks: state.bookmarks,
     arxivBookmarks: state.arxivBookmarks,
+    biorxivBookmarks: state.biorxivBookmarks || [],
     artBookmarks: state.artBookmarks,
     nasaBookmarks: state.nasaBookmarks,
     historyBookmarks: state.historyBookmarks,
@@ -180,10 +225,13 @@ export function useLocalStorage() {
     setCategories,
     setArxivCategory,
     setTabOrder,
+    toggleTab,
     // Wikipedia
     addBookmark, removeBookmark, isBookmarked, clearAllBookmarks,
     // arXiv
     addArxivBookmark, removeArxivBookmark, isArxivBookmarked, clearAllArxivBookmarks,
+    // bioRxiv/medRxiv
+    addBiorxivBookmark, removeBiorxivBookmark, isBiorxivBookmarked, clearAllBiorxivBookmarks,
     // Art
     addArtBookmark, removeArtBookmark, isArtBookmarked, clearAllArtBookmarks,
     // NASA

@@ -4,6 +4,7 @@ import { useWikiScraper } from './hooks/useWikiScraper'
 import { useLocalStorage } from './hooks/useLocalStorage'
 import Feed from './components/Feed'
 import ArxivFeed from './components/ArxivFeed'
+import BiorxivFeed from './components/BiorxivFeed'
 import ArtFeed from './components/ArtFeed'
 import NasaFeed from './components/NasaFeed'
 import HistoryFeed from './components/HistoryFeed'
@@ -15,6 +16,8 @@ import Toast from './components/Toast'
 const ALL_TABS = {
   wiki: { id: 'wiki', label: 'Wiki' },
   arxiv: { id: 'arxiv', label: 'arXiv' },
+  medrxiv: { id: 'medrxiv', label: 'medRxiv' },
+  biorxiv: { id: 'biorxiv', label: 'bioRxiv' },
   art: { id: 'art', label: 'Art' },
   nasa: { id: 'nasa', label: 'NASA' },
   history: { id: 'history', label: 'Today' },
@@ -30,11 +33,13 @@ function App() {
   const lastScrollY = useRef(0)
 
   const {
-    theme, categories, arxivCategory, tabOrder, setTheme, toggleCategory, setArxivCategory, setTabOrder,
+    theme, categories, arxivCategory, tabOrder, enabledTabs, setTheme, toggleCategory, setArxivCategory, setTabOrder, toggleTab,
     // Wikipedia
     bookmarks, addBookmark, removeBookmark, isBookmarked, clearAllBookmarks,
     // arXiv
     arxivBookmarks, addArxivBookmark, removeArxivBookmark, isArxivBookmarked, clearAllArxivBookmarks,
+    // bioRxiv/medRxiv
+    biorxivBookmarks, addBiorxivBookmark, removeBiorxivBookmark, isBiorxivBookmarked, clearAllBiorxivBookmarks,
     // Art
     artBookmarks, addArtBookmark, removeArtBookmark, isArtBookmarked, clearAllArtBookmarks,
     // NASA
@@ -42,6 +47,18 @@ function App() {
     // History
     historyBookmarks, addHistoryBookmark, removeHistoryBookmark, isHistoryBookmarked, clearAllHistoryBookmarks,
   } = useLocalStorage()
+
+  // Get visible tabs (enabled and in order)
+  const visibleTabs = useMemo(() => {
+    return tabOrder.filter(tabId => enabledTabs.includes(tabId))
+  }, [tabOrder, enabledTabs])
+
+  // Ensure activeTab is valid (in enabled tabs)
+  useEffect(() => {
+    if (!enabledTabs.includes(activeTab) && visibleTabs.length > 0) {
+      setActiveTab(visibleTabs[0])
+    }
+  }, [enabledTabs, activeTab, visibleTabs])
 
   useEffect(() => {
     const root = document.documentElement
@@ -92,6 +109,10 @@ function App() {
     isArxivBookmarked(paper.id) ? removeArxivBookmark(paper.id) : addArxivBookmark(paper)
   }
 
+  const handleToggleBiorxivBookmark = (paper) => {
+    isBiorxivBookmarked(paper.id) ? removeBiorxivBookmark(paper.id) : addBiorxivBookmark(paper)
+  }
+
   const handleToggleArtBookmark = (artwork) => {
     isArtBookmarked(artwork.id) ? removeArtBookmark(artwork.id) : addArtBookmark(artwork)
   }
@@ -122,23 +143,26 @@ function App() {
     setToast({ visible: false, loading: false })
   }, [])
 
-  const totalBookmarks = bookmarks.length + arxivBookmarks.length + artBookmarks.length + nasaBookmarks.length + historyBookmarks.length
+  const totalBookmarks = bookmarks.length + arxivBookmarks.length + biorxivBookmarks.length + artBookmarks.length + nasaBookmarks.length + historyBookmarks.length
 
   if (view === 'saved') {
     return (
       <SavedArticles
         bookmarks={bookmarks}
         arxivBookmarks={arxivBookmarks}
+        biorxivBookmarks={biorxivBookmarks}
         artBookmarks={artBookmarks}
         nasaBookmarks={nasaBookmarks}
         historyBookmarks={historyBookmarks}
         onRemoveBookmark={removeBookmark}
         onRemoveArxivBookmark={removeArxivBookmark}
+        onRemoveBiorxivBookmark={removeBiorxivBookmark}
         onRemoveArtBookmark={removeArtBookmark}
         onRemoveNasaBookmark={removeNasaBookmark}
         onRemoveHistoryBookmark={removeHistoryBookmark}
         onClearAll={clearAllBookmarks}
         onClearAllArxiv={clearAllArxivBookmarks}
+        onClearAllBiorxiv={clearAllBiorxivBookmarks}
         onClearAllArt={clearAllArtBookmarks}
         onClearAllNasa={clearAllNasaBookmarks}
         onClearAllHistory={clearAllHistoryBookmarks}
@@ -203,10 +227,10 @@ function App() {
           </nav>
         </div>
 
-        {/* Tabs */}
+        {/* Tabs - only show enabled tabs */}
         <div className="max-w-2xl mx-auto px-4 overflow-x-auto">
           <div className="flex gap-1 border-b border-transparent -mb-px min-w-max">
-            {tabOrder.map((tabId) => {
+            {visibleTabs.map((tabId) => {
               const tab = ALL_TABS[tabId]
               if (!tab) return null
               return (
@@ -274,6 +298,36 @@ function App() {
           </>
         )}
 
+        {activeTab === 'medrxiv' && (
+          <>
+            <div className="mb-6">
+              <h2 className="font-serif text-2xl font-semibold text-ink-900 dark:text-ink-50 mb-2">Health Sciences</h2>
+              <p className="font-sans text-sm text-ink-500 dark:text-ink-400">Latest preprints from medRxiv</p>
+            </div>
+            <BiorxivFeed
+              server="medrxiv"
+              isBiorxivBookmarked={isBiorxivBookmarked}
+              onToggleBiorxivBookmark={handleToggleBiorxivBookmark}
+              showToast={showToast}
+            />
+          </>
+        )}
+
+        {activeTab === 'biorxiv' && (
+          <>
+            <div className="mb-6">
+              <h2 className="font-serif text-2xl font-semibold text-ink-900 dark:text-ink-50 mb-2">Biology</h2>
+              <p className="font-sans text-sm text-ink-500 dark:text-ink-400">Latest preprints from bioRxiv</p>
+            </div>
+            <BiorxivFeed
+              server="biorxiv"
+              isBiorxivBookmarked={isBiorxivBookmarked}
+              onToggleBiorxivBookmark={handleToggleBiorxivBookmark}
+              showToast={showToast}
+            />
+          </>
+        )}
+
         {activeTab === 'art' && (
           <>
             <div className="mb-6">
@@ -319,6 +373,8 @@ function App() {
             Content from{' '}
             <a href="https://www.wikipedia.org" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink-600 dark:hover:text-ink-300">Wikipedia</a>,{' '}
             <a href="https://arxiv.org" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink-600 dark:hover:text-ink-300">arXiv</a>,{' '}
+            <a href="https://www.medrxiv.org" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink-600 dark:hover:text-ink-300">medRxiv</a>,{' '}
+            <a href="https://www.biorxiv.org" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink-600 dark:hover:text-ink-300">bioRxiv</a>,{' '}
             <a href="https://www.artic.edu" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink-600 dark:hover:text-ink-300">Art Institute of Chicago</a>,{' '}
             <a href="https://api.nasa.gov" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink-600 dark:hover:text-ink-300">NASA</a>
           </p>
@@ -329,7 +385,20 @@ function App() {
         </div>
       </footer>
 
-      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} theme={theme} setTheme={setTheme} categories={categories} toggleCategory={toggleCategory} arxivCategory={arxivCategory} setArxivCategory={setArxivCategory} tabOrder={tabOrder} setTabOrder={setTabOrder} />
+      <SettingsModal 
+        isOpen={settingsOpen} 
+        onClose={() => setSettingsOpen(false)} 
+        theme={theme} 
+        setTheme={setTheme} 
+        categories={categories} 
+        toggleCategory={toggleCategory} 
+        arxivCategory={arxivCategory} 
+        setArxivCategory={setArxivCategory} 
+        tabOrder={tabOrder} 
+        setTabOrder={setTabOrder}
+        enabledTabs={enabledTabs}
+        toggleTab={toggleTab}
+      />
       <InfoModal isOpen={infoOpen} onClose={() => setInfoOpen(false)} />
       <Toast isVisible={toast.visible} isLoading={toast.loading} message="Refreshed!" onHide={hideToast} />
     </div>

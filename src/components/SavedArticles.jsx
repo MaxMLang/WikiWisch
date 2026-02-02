@@ -9,12 +9,14 @@ import {
   Palette,
   Sparkles,
   History,
-  Users
+  Users,
+  FlaskConical
 } from 'lucide-react'
 
 const TABS = [
   { id: 'wiki', label: 'Wiki', icon: BookOpen },
   { id: 'arxiv', label: 'arXiv', icon: FileText },
+  { id: 'biorxiv', label: 'Preprints', icon: FlaskConical },
   { id: 'art', label: 'Art', icon: Palette },
   { id: 'nasa', label: 'NASA', icon: Sparkles },
   { id: 'history', label: 'Today', icon: History },
@@ -23,16 +25,19 @@ const TABS = [
 export default function SavedArticles({ 
   bookmarks = [], 
   arxivBookmarks = [],
+  biorxivBookmarks = [],
   artBookmarks = [],
   nasaBookmarks = [],
   historyBookmarks = [],
   onRemoveBookmark, 
   onRemoveArxivBookmark,
+  onRemoveBiorxivBookmark,
   onRemoveArtBookmark,
   onRemoveNasaBookmark,
   onRemoveHistoryBookmark,
   onClearAll,
   onClearAllArxiv,
+  onClearAllBiorxiv,
   onClearAllArt,
   onClearAllNasa,
   onClearAllHistory,
@@ -44,6 +49,7 @@ export default function SavedArticles({
   const bookmarkCounts = {
     wiki: bookmarks.length,
     arxiv: arxivBookmarks.length,
+    biorxiv: biorxivBookmarks.length,
     art: artBookmarks.length,
     nasa: nasaBookmarks.length,
     history: historyBookmarks.length,
@@ -54,6 +60,7 @@ export default function SavedArticles({
   const getCurrentBookmarks = () => {
     switch (activeTab) {
       case 'arxiv': return arxivBookmarks
+      case 'biorxiv': return biorxivBookmarks
       case 'art': return artBookmarks
       case 'nasa': return nasaBookmarks
       case 'history': return historyBookmarks
@@ -64,6 +71,7 @@ export default function SavedArticles({
   const handleClearAll = () => {
     switch (activeTab) {
       case 'arxiv': onClearAllArxiv(); break
+      case 'biorxiv': onClearAllBiorxiv(); break
       case 'art': onClearAllArt(); break
       case 'nasa': onClearAllNasa(); break
       case 'history': onClearAllHistory(); break
@@ -196,6 +204,36 @@ export default function SavedArticles({
                     Read <ExternalLink className="w-3 h-3" />
                   </a>
                   <button onClick={() => onRemoveArxivBookmark(item.id)} className="flex items-center gap-1.5 px-3 py-1.5 font-sans text-xs font-medium text-ink-500 dark:text-ink-400 hover:text-ink-900 dark:hover:text-ink-100 transition-colors">
+                    <BookmarkX className="w-3.5 h-3.5" /> Remove
+                  </button>
+                </div>
+              </article>
+            ))}
+
+            {/* bioRxiv/medRxiv */}
+            {activeTab === 'biorxiv' && biorxivBookmarks.map((item) => (
+              <article key={item.id} className="p-4 bg-white dark:bg-ink-900 border border-ink-200 dark:border-ink-800 rounded-lg card-shadow">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className={`px-2 py-0.5 text-xs font-sans font-semibold rounded ${
+                    item.server === 'medrxiv' 
+                      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                      : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                  }`}>
+                    {item.server === 'medrxiv' ? 'medRxiv' : 'bioRxiv'}
+                  </span>
+                </div>
+                <h3 className="font-serif text-lg font-semibold text-ink-900 dark:text-ink-50 mb-2 line-clamp-2">{item.title}</h3>
+                {item.authors?.length > 0 && (
+                  <div className="flex items-center gap-1.5 text-xs text-ink-500 dark:text-ink-400 mb-2">
+                    <Users className="w-3.5 h-3.5" />
+                    <span>{item.authors.join(', ')}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 mt-3">
+                  <a href={item.absLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 font-sans text-xs font-medium text-ink-600 dark:text-ink-400 border border-ink-200 dark:border-ink-700 rounded-full hover:border-ink-400 dark:hover:border-ink-500 transition-colors">
+                    Read <ExternalLink className="w-3 h-3" />
+                  </a>
+                  <button onClick={() => onRemoveBiorxivBookmark(item.id)} className="flex items-center gap-1.5 px-3 py-1.5 font-sans text-xs font-medium text-ink-500 dark:text-ink-400 hover:text-ink-900 dark:hover:text-ink-100 transition-colors">
                     <BookmarkX className="w-3.5 h-3.5" /> Remove
                   </button>
                 </div>
