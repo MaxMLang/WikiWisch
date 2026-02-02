@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 
-// Wikimedia On This Day API
-const WIKI_API = 'https://api.wikimedia.org/feed/v1/wikipedia/en/onthisday'
+// Wikipedia REST API - On This Day endpoint (works with CORS)
+const WIKI_API = 'https://en.wikipedia.org/api/rest_v1/feed/onthisday'
 
 // Get today's date parts
 function getTodayParts() {
@@ -16,6 +16,7 @@ function getTodayParts() {
 async function fetchOnThisDay() {
   const { month, day } = getTodayParts()
   
+  // Fetch all types: events, births, deaths
   const response = await fetch(`${WIKI_API}/all/${month}/${day}`, {
     headers: {
       'Accept': 'application/json',
@@ -26,36 +27,93 @@ async function fetchOnThisDay() {
   
   const data = await response.json()
   
-  // Combine events, births, deaths and sort by year
-  const events = [
-    ...(data.events || []).map((e) => ({ ...e, type: 'event' })),
-    ...(data.births || []).slice(0, 10).map((e) => ({ ...e, type: 'birth' })),
-    ...(data.deaths || []).slice(0, 10).map((e) => ({ ...e, type: 'death' })),
-  ]
-    .filter((e) => e.pages && e.pages.length > 0)
-    .map((event) => {
-      const page = event.pages[0]
-      return {
-        id: `${event.type}-${event.year}-${page.pageid}`,
-        year: event.year,
-        text: event.text,
-        type: event.type,
-        title: page.titles?.normalized || page.title,
-        description: page.description,
-        extract: page.extract,
-        thumbnail: page.thumbnail?.source,
-        wikiUrl: page.content_urls?.desktop?.page,
+  // Combine events, births, deaths
+  const allEvents = []
+  
+  // Selected events (curated, most interesting)
+  if (data.selected) {
+    data.selected.forEach((e) => {
+      if (e.pages && e.pages.length > 0) {
+        const page = e.pages[0]
+        allEvents.push({
+          id: `selected-${e.year}-${page.pageid || Math.random()}`,
+          year: e.year,
+          text: e.text,
+          type: 'event',
+          title: page.titles?.normalized || page.title,
+          description: page.description,
+          thumbnail: page.thumbnail?.source,
+          wikiUrl: page.content_urls?.desktop?.page,
+        })
       }
     })
-    .sort((a, b) => b.year - a.year)
-
-  return events
+  }
+  
+  // Events
+  if (data.events) {
+    data.events.slice(0, 15).forEach((e) => {
+      if (e.pages && e.pages.length > 0) {
+        const page = e.pages[0]
+        allEvents.push({
+          id: `event-${e.year}-${page.pageid || Math.random()}`,
+          year: e.year,
+          text: e.text,
+          type: 'event',
+          title: page.titles?.normalized || page.title,
+          description: page.description,
+          thumbnail: page.thumbnail?.source,
+          wikiUrl: page.content_urls?.desktop?.page,
+        })
+      }
+    })
+  }
+  
+  // Births
+  if (data.births) {
+    data.births.slice(0, 10).forEach((e) => {
+      if (e.pages && e.pages.length > 0) {
+        const page = e.pages[0]
+        allEvents.push({
+          id: `birth-${e.year}-${page.pageid || Math.random()}`,
+          year: e.year,
+          text: e.text,
+          type: 'birth',
+          title: page.titles?.normalized || page.title,
+          description: page.description,
+          thumbnail: page.thumbnail?.source,
+          wikiUrl: page.content_urls?.desktop?.page,
+        })
+      }
+    })
+  }
+  
+  // Deaths
+  if (data.deaths) {
+    data.deaths.slice(0, 10).forEach((e) => {
+      if (e.pages && e.pages.length > 0) {
+        const page = e.pages[0]
+        allEvents.push({
+          id: `death-${e.year}-${page.pageid || Math.random()}`,
+          year: e.year,
+          text: e.text,
+          type: 'death',
+          title: page.titles?.normalized || page.title,
+          description: page.description,
+          thumbnail: page.thumbnail?.source,
+          wikiUrl: page.content_urls?.desktop?.page,
+        })
+      }
+    })
+  }
+  
+  // Sort by year descending
+  return allEvents.sort((a, b) => b.year - a.year)
 }
 
 export function useHistoryScraper() {
   return useQuery({
     queryKey: ['on-this-day', getTodayParts()],
     queryFn: fetchOnThisDay,
-    staleTime: 1000 * 60 * 60, // 1 hour (data doesn't change within a day)
+    staleTime: 1000 * 60 * 60, // 1 hour
   })
 }

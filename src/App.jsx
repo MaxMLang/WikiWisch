@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Settings, Bookmark, RefreshCw, Info, Heart } from 'lucide-react'
 import { useWikiScraper } from './hooks/useWikiScraper'
 import { useLocalStorage } from './hooks/useLocalStorage'
@@ -26,6 +26,8 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [infoOpen, setInfoOpen] = useState(false)
   const [toast, setToast] = useState({ visible: false, loading: false })
+  const [headerVisible, setHeaderVisible] = useState(true)
+  const lastScrollY = useRef(0)
 
   const {
     theme, categories, tabOrder, setTheme, toggleCategory, setTabOrder,
@@ -54,6 +56,26 @@ function App() {
       root.classList.toggle('dark', theme === 'dark')
     }
   }, [theme])
+
+  // Hide header on scroll down, show on scroll up
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY
+      const scrollingDown = currentScrollY > lastScrollY.current
+      const scrolledPastThreshold = currentScrollY > 80
+      
+      if (scrollingDown && scrolledPastThreshold) {
+        setHeaderVisible(false)
+      } else if (!scrollingDown) {
+        setHeaderVisible(true)
+      }
+      
+      lastScrollY.current = currentScrollY
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage, error, refetch } = useWikiScraper(categories)
 
@@ -127,7 +149,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-ink-50 dark:bg-ink-950 transition-colors duration-300">
-      <header className="sticky top-0 z-40 bg-white/90 dark:bg-ink-950/90 backdrop-blur-md border-b border-ink-100 dark:border-ink-800">
+      <header className={`sticky top-0 z-40 bg-white/90 dark:bg-ink-950/90 backdrop-blur-md border-b border-ink-100 dark:border-ink-800 transition-transform duration-300 ${headerVisible ? 'translate-y-0' : '-translate-y-full'}`}>
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-ink-900 dark:bg-ink-100 rounded-lg flex items-center justify-center">
