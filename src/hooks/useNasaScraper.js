@@ -33,7 +33,9 @@ async function fetchApod(pageParam = 0) {
   const data = await response.json()
   
   // API returns array, newest first when we reverse
+  // Filter out copyrighted images - only keep public domain (NASA) content
   const entries = (Array.isArray(data) ? data : [data])
+    .filter((item) => !item.copyright) // Only public domain images
     .reverse()
     .map((item) => ({
       id: item.date,
@@ -44,7 +46,6 @@ async function fetchApod(pageParam = 0) {
       url: item.url,
       hdUrl: item.hdurl,
       thumbnailUrl: item.thumbnail_url || item.url,
-      copyright: item.copyright,
     }))
 
   return {
