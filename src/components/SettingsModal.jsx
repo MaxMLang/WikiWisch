@@ -1,0 +1,178 @@
+import { useEffect, useRef } from 'react'
+import { X, Sun, Moon, Monitor, Check } from 'lucide-react'
+
+const AVAILABLE_CATEGORIES = [
+  { id: 'science', label: 'Science', emoji: '🔬' },
+  { id: 'history', label: 'History', emoji: '📜' },
+  { id: 'technology', label: 'Technology', emoji: '💻' },
+  { id: 'arts', label: 'Arts & Culture', emoji: '🎨' },
+  { id: 'geography', label: 'Geography', emoji: '🌍' },
+  { id: 'nature', label: 'Nature', emoji: '🌿' },
+  { id: 'philosophy', label: 'Philosophy', emoji: '💭' },
+  { id: 'sports', label: 'Sports', emoji: '⚽' },
+]
+
+const THEME_OPTIONS = [
+  { id: 'light', label: 'Light', icon: Sun },
+  { id: 'dark', label: 'Dark', icon: Moon },
+  { id: 'system', label: 'System', icon: Monitor },
+]
+
+export default function SettingsModal({ 
+  isOpen, 
+  onClose, 
+  theme, 
+  setTheme, 
+  categories, 
+  toggleCategory 
+}) {
+  const modalRef = useRef(null)
+
+  // Close on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose()
+    }
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = 'hidden'
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = ''
+    }
+  }, [isOpen, onClose])
+
+  // Close on click outside
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose()
+    }
+  }
+
+  if (!isOpen) return null
+
+  return (
+    <div 
+      className="
+        fixed inset-0 z-50
+        bg-ink-900/50 dark:bg-ink-950/80
+        backdrop-blur-sm
+        flex items-end sm:items-center justify-center
+        p-0 sm:p-4
+        animate-fade-in
+      "
+      onClick={handleBackdropClick}
+    >
+      <div 
+        ref={modalRef}
+        className="
+          w-full sm:max-w-lg
+          max-h-[90vh] overflow-y-auto
+          bg-white dark:bg-ink-900
+          sm:rounded-lg
+          rounded-t-2xl
+          shadow-2xl
+          animate-slide-up
+        "
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="settings-title"
+      >
+        {/* Header */}
+        <div className="sticky top-0 bg-white dark:bg-ink-900 border-b border-ink-100 dark:border-ink-800 px-6 py-4 flex items-center justify-between">
+          <h2 id="settings-title" className="font-serif text-xl font-semibold text-ink-900 dark:text-ink-50">
+            Settings
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-2 -mr-2 rounded-full hover:bg-ink-100 dark:hover:bg-ink-800 text-ink-500 dark:text-ink-400 transition-colors"
+            aria-label="Close settings"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-8">
+          {/* Theme Selection */}
+          <section>
+            <h3 className="font-sans text-sm font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-400 mb-4">
+              Appearance
+            </h3>
+            <div className="grid grid-cols-3 gap-3">
+              {THEME_OPTIONS.map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setTheme(id)}
+                  className={`
+                    flex flex-col items-center gap-2 p-4
+                    border rounded-lg transition-all
+                    ${theme === id 
+                      ? 'border-ink-900 dark:border-ink-100 bg-ink-50 dark:bg-ink-800' 
+                      : 'border-ink-200 dark:border-ink-700 hover:border-ink-300 dark:hover:border-ink-600'
+                    }
+                  `}
+                >
+                  <Icon className={`w-5 h-5 ${theme === id ? 'text-ink-900 dark:text-ink-100' : 'text-ink-400 dark:text-ink-500'}`} />
+                  <span className={`font-sans text-sm ${theme === id ? 'text-ink-900 dark:text-ink-100 font-medium' : 'text-ink-600 dark:text-ink-400'}`}>
+                    {label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {/* Category Selection */}
+          <section>
+            <h3 className="font-sans text-sm font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-400 mb-2">
+              Topics
+            </h3>
+            <p className="font-sans text-sm text-ink-500 dark:text-ink-500 mb-4">
+              Select the topics you want to see in your feed. Leave all unchecked for completely random articles.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {AVAILABLE_CATEGORIES.map(({ id, label, emoji }) => {
+                const isSelected = categories.includes(id)
+                return (
+                  <button
+                    key={id}
+                    onClick={() => toggleCategory(id)}
+                    className={`
+                      flex items-center gap-3 p-3
+                      border rounded-lg transition-all text-left
+                      ${isSelected 
+                        ? 'border-ink-900 dark:border-ink-100 bg-ink-50 dark:bg-ink-800' 
+                        : 'border-ink-200 dark:border-ink-700 hover:border-ink-300 dark:hover:border-ink-600'
+                      }
+                    `}
+                  >
+                    <span className="text-xl" role="img" aria-hidden="true">{emoji}</span>
+                    <span className={`font-sans text-sm flex-1 ${isSelected ? 'text-ink-900 dark:text-ink-100 font-medium' : 'text-ink-600 dark:text-ink-400'}`}>
+                      {label}
+                    </span>
+                    {isSelected && (
+                      <Check className="w-4 h-4 text-ink-900 dark:text-ink-100" />
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </section>
+
+          {/* About */}
+          <section className="pt-4 border-t border-ink-100 dark:border-ink-800">
+            <h3 className="font-sans text-sm font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-400 mb-2">
+              About
+            </h3>
+            <p className="font-sans text-sm text-ink-500 dark:text-ink-500 leading-relaxed">
+              WikiScroll brings you an endless stream of knowledge from Wikipedia. 
+              Your preferences and bookmarks are saved locally in your browser—no account needed.
+            </p>
+          </section>
+        </div>
+      </div>
+    </div>
+  )
+}
