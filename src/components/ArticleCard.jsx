@@ -31,19 +31,19 @@ export default function ArticleCard({ article, isBookmarked, onToggleBookmark, i
     : extract
 
   const handleShare = async () => {
+    const shareText = `${wikiUrl} — found this Wischer on wikiwisch.vercel.app`
     if (navigator.share) {
       try {
         await navigator.share({
           title: title,
-          text: description || shortExtract,
+          text: `Found this Wischer on wikiwisch.vercel.app`,
           url: wikiUrl,
         })
       } catch (e) {
         // User cancelled or error
       }
     } else {
-      // Fallback: copy to clipboard
-      await navigator.clipboard.writeText(wikiUrl)
+      await navigator.clipboard.writeText(shareText)
     }
   }
 

@@ -1,8 +1,9 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
 
-// NASA APOD API - free tier, no key needed for demo (or use DEMO_KEY)
+// NASA APOD API
+// Get your own free key at https://api.nasa.gov for higher limits
 const NASA_API = 'https://api.nasa.gov/planetary/apod'
-const API_KEY = 'DEMO_KEY' // Works for low-volume, replace with your own for production
+const API_KEY = 'DEMO_KEY'
 
 // Get date string in YYYY-MM-DD format
 function getDateString(daysAgo = 0) {
@@ -13,7 +14,7 @@ function getDateString(daysAgo = 0) {
 
 // Fetch APOD entries
 async function fetchApod(pageParam = 0) {
-  const batchSize = 5
+  const batchSize = 3 // Reduced to avoid rate limits
   const startDay = pageParam * batchSize
   
   // Fetch a range of dates
@@ -28,7 +29,14 @@ async function fetchApod(pageParam = 0) {
   })
 
   const response = await fetch(`${NASA_API}?${params}`)
-  if (!response.ok) throw new Error('Failed to fetch from NASA')
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    if (errorData.error?.code === 'OVER_RATE_LIMIT') {
+      throw new Error('NASA API rate limit reached. Please try again in a few minutes.')
+    }
+    throw new Error('Failed to fetch from NASA')
+  }
   
   const data = await response.json()
   
@@ -51,7 +59,7 @@ async function fetchApod(pageParam = 0) {
   return {
     entries,
     nextCursor: pageParam + 1,
-    hasMore: entries.length === batchSize,
+    hasMore: entries.length > 0,
   }
 }
 
@@ -61,6 +69,9 @@ export function useNasaScraper() {
     queryFn: ({ pageParam }) => fetchApod(pageParam),
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.hasMore ? lastPage.nextCursor : undefined,
-    staleTime: 1000 * 60 * 30, // 30 minutes
+    staleTime: 1000 * 60 * 60, // 1 hour cache to avoid rate limits
+    gcTime: 1000 * 60 * 60 * 2, // Keep in cache for 2 hours
+    retry: 1, // Only retry once
+    retryDelay: 5000, // Wait 5 seconds before retry
   })
 }

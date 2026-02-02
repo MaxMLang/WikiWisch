@@ -3,7 +3,8 @@ import {
   Bookmark, 
   BookmarkCheck, 
   ExternalLink,
-  Palette
+  Palette,
+  Share2
 } from 'lucide-react'
 
 export default function ArtCard({ artwork, isBookmarked, onToggleBookmark, index }) {
@@ -21,6 +22,23 @@ export default function ArtCard({ artwork, isBookmarked, onToggleBookmark, index
     imageUrl,
     detailUrl,
   } = artwork
+
+  const handleShare = async () => {
+    const shareText = `${detailUrl} — found this Wischer on wikiwisch.vercel.app`
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: title,
+          text: `Found this Wischer on wikiwisch.vercel.app`,
+          url: detailUrl,
+        })
+      } catch (e) {
+        // User cancelled or error
+      }
+    } else {
+      await navigator.clipboard.writeText(shareText)
+    }
+  }
 
   const animationDelay = `animation-delay-${(index % 5) * 100}`
 
@@ -97,23 +115,32 @@ export default function ArtCard({ artwork, isBookmarked, onToggleBookmark, index
 
       {/* Footer */}
       <div className="px-6 md:px-8 py-4 border-t border-ink-100 dark:border-ink-800 flex items-center justify-between">
-        <button
-          onClick={() => onToggleBookmark(artwork)}
-          aria-label={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
-          className={`
-            p-2 rounded-full transition-all duration-200
-            ${isBookmarked 
-              ? 'bg-ink-900 dark:bg-ink-100 text-white dark:text-ink-900' 
-              : 'hover:bg-ink-100 dark:hover:bg-ink-800 text-ink-600 dark:text-ink-400'
-            }
-          `}
-        >
-          {isBookmarked ? (
-            <BookmarkCheck className="w-5 h-5" />
-          ) : (
-            <Bookmark className="w-5 h-5" />
-          )}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onToggleBookmark(artwork)}
+            aria-label={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
+            className={`
+              p-2 rounded-full transition-all duration-200
+              ${isBookmarked 
+                ? 'bg-ink-900 dark:bg-ink-100 text-white dark:text-ink-900' 
+                : 'hover:bg-ink-100 dark:hover:bg-ink-800 text-ink-600 dark:text-ink-400'
+              }
+            `}
+          >
+            {isBookmarked ? (
+              <BookmarkCheck className="w-5 h-5" />
+            ) : (
+              <Bookmark className="w-5 h-5" />
+            )}
+          </button>
+          <button
+            onClick={handleShare}
+            aria-label="Share artwork"
+            className="p-2 rounded-full hover:bg-ink-100 dark:hover:bg-ink-800 text-ink-600 dark:text-ink-400 transition-colors"
+          >
+            <Share2 className="w-5 h-5" />
+          </button>
+        </div>
 
         <a
           href={detailUrl}

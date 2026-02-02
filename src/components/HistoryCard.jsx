@@ -6,7 +6,8 @@ import {
   Calendar,
   Star,
   Skull,
-  History
+  History,
+  Share2
 } from 'lucide-react'
 
 export default function HistoryCard({ event, isBookmarked, onToggleBookmark, index }) {
@@ -38,6 +39,24 @@ export default function HistoryCard({ event, isBookmarked, onToggleBookmark, ind
     purple: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400',
     green: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
     ink: 'bg-ink-200 dark:bg-ink-700 text-ink-600 dark:text-ink-300',
+  }
+
+  const handleShare = async () => {
+    const shareUrl = wikiUrl || 'https://wikiwisch.vercel.app'
+    const shareText = `${shareUrl} — found this Wischer on wikiwisch.vercel.app`
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: title,
+          text: `Found this Wischer on wikiwisch.vercel.app`,
+          url: shareUrl,
+        })
+      } catch (e) {
+        // User cancelled or error
+      }
+    } else {
+      await navigator.clipboard.writeText(shareText)
+    }
   }
 
   const animationDelay = `animation-delay-${(index % 5) * 100}`
@@ -125,6 +144,14 @@ export default function HistoryCard({ event, isBookmarked, onToggleBookmark, ind
               ) : (
                 <Bookmark className="w-4 h-4" />
               )}
+            </button>
+
+            <button
+              onClick={handleShare}
+              aria-label="Share event"
+              className="p-1.5 rounded-full hover:bg-ink-100 dark:hover:bg-ink-800 text-ink-500 dark:text-ink-400 transition-colors"
+            >
+              <Share2 className="w-4 h-4" />
             </button>
 
             {wikiUrl && (

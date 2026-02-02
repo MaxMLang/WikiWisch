@@ -7,7 +7,8 @@ import {
   ChevronDown,
   ChevronUp,
   Users,
-  Calendar
+  Calendar,
+  Share2
 } from 'lucide-react'
 
 export default function ArxivCard({ paper, isBookmarked, onToggleBookmark, index }) {
@@ -42,6 +43,23 @@ export default function ArxivCard({ paper, isBookmarked, onToggleBookmark, index
   const displayAuthors = authors.length > 3 
     ? [...authors.slice(0, 3), `+${authors.length - 3} more`]
     : authors
+
+  const handleShare = async () => {
+    const shareText = `${absLink} — found this Wischer on wikiwisch.vercel.app`
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: title,
+          text: `Found this Wischer on wikiwisch.vercel.app`,
+          url: absLink,
+        })
+      } catch (e) {
+        // User cancelled or error
+      }
+    } else {
+      await navigator.clipboard.writeText(shareText)
+    }
+  }
 
   const animationDelay = `animation-delay-${(index % 5) * 100}`
 
@@ -154,6 +172,13 @@ export default function ArxivCard({ paper, isBookmarked, onToggleBookmark, index
             ) : (
               <Bookmark className="w-5 h-5" />
             )}
+          </button>
+          <button
+            onClick={handleShare}
+            aria-label="Share paper"
+            className="p-2 rounded-full hover:bg-ink-100 dark:hover:bg-ink-800 text-ink-600 dark:text-ink-400 transition-colors"
+          >
+            <Share2 className="w-5 h-5" />
           </button>
         </div>
 

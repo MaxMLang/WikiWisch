@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Bookmark, BookmarkCheck, ExternalLink, FileText, ChevronDown, ChevronUp } from 'lucide-react'
+import { Bookmark, BookmarkCheck, ExternalLink, FileText, ChevronDown, ChevronUp, Share2 } from 'lucide-react'
 
 export default function BiorxivCard({ paper, index, isBookmarked, onToggleBookmark }) {
   const [expanded, setExpanded] = useState(false)
@@ -12,6 +12,23 @@ export default function BiorxivCard({ paper, index, isBookmarked, onToggleBookma
   const serverColor = paper.server === 'medrxiv' 
     ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
     : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+
+  const handleShare = async () => {
+    const shareText = `${paper.absLink} — found this Wischer on wikiwisch.vercel.app`
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: paper.title,
+          text: `Found this Wischer on wikiwisch.vercel.app`,
+          url: paper.absLink,
+        })
+      } catch (e) {
+        // User cancelled or error
+      }
+    } else {
+      await navigator.clipboard.writeText(shareText)
+    }
+  }
 
   return (
     <article
@@ -31,17 +48,26 @@ export default function BiorxivCard({ paper, index, isBookmarked, onToggleBookma
               </span>
             )}
           </div>
-          <button
-            onClick={() => onToggleBookmark(paper)}
-            className={`p-2 rounded-full transition-colors flex-shrink-0 ${
-              isBookmarked 
-                ? 'text-ink-900 dark:text-ink-100 bg-ink-100 dark:bg-ink-800' 
-                : 'text-ink-400 dark:text-ink-500 hover:bg-ink-100 dark:hover:bg-ink-800'
-            }`}
-            aria-label={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
-          >
-            {isBookmarked ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleShare}
+              aria-label="Share preprint"
+              className="p-2 rounded-full hover:bg-ink-100 dark:hover:bg-ink-800 text-ink-400 dark:text-ink-500 transition-colors"
+            >
+              <Share2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => onToggleBookmark(paper)}
+              className={`p-2 rounded-full transition-colors flex-shrink-0 ${
+                isBookmarked 
+                  ? 'text-ink-900 dark:text-ink-100 bg-ink-100 dark:bg-ink-800' 
+                  : 'text-ink-400 dark:text-ink-500 hover:bg-ink-100 dark:hover:bg-ink-800'
+              }`}
+              aria-label={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
+            >
+              {isBookmarked ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
 
         {/* Title */}

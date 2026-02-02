@@ -6,7 +6,8 @@ import {
   ChevronDown,
   ChevronUp,
   Calendar,
-  Sparkles
+  Sparkles,
+  Share2
 } from 'lucide-react'
 
 export default function NasaCard({ entry, isBookmarked, onToggleBookmark, index }) {
@@ -23,7 +24,6 @@ export default function NasaCard({ entry, isBookmarked, onToggleBookmark, index 
     mediaType,
     url,
     hdUrl,
-    copyright,
   } = entry
 
   // Format date
@@ -37,6 +37,24 @@ export default function NasaCard({ entry, isBookmarked, onToggleBookmark, index 
   const shortExplanation = explanation?.length > 300 
     ? explanation.slice(0, 300).trim() + '...' 
     : explanation
+
+  const handleShare = async () => {
+    const shareUrl = hdUrl || url || `https://apod.nasa.gov/apod/ap${date.replace(/-/g, '').slice(2)}.html`
+    const shareText = `${shareUrl} — found this Wischer on wikiwisch.vercel.app`
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: title,
+          text: `Found this Wischer on wikiwisch.vercel.app`,
+          url: shareUrl,
+        })
+      } catch (e) {
+        // User cancelled or error
+      }
+    } else {
+      await navigator.clipboard.writeText(shareText)
+    }
+  }
 
   const animationDelay = `animation-delay-${(index % 5) * 100}`
 
@@ -131,34 +149,36 @@ export default function NasaCard({ entry, isBookmarked, onToggleBookmark, index 
             )}
           </button>
         )}
-
-        {/* Copyright */}
-        {copyright && (
-          <p className="mt-4 text-xs text-ink-400 dark:text-ink-500">
-            © {copyright}
-          </p>
-        )}
       </div>
 
       {/* Footer */}
       <div className="px-6 md:px-8 py-4 border-t border-ink-100 dark:border-ink-800 flex items-center justify-between">
-        <button
-          onClick={() => onToggleBookmark(entry)}
-          aria-label={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
-          className={`
-            p-2 rounded-full transition-all duration-200
-            ${isBookmarked 
-              ? 'bg-ink-900 dark:bg-ink-100 text-white dark:text-ink-900' 
-              : 'hover:bg-ink-100 dark:hover:bg-ink-800 text-ink-600 dark:text-ink-400'
-            }
-          `}
-        >
-          {isBookmarked ? (
-            <BookmarkCheck className="w-5 h-5" />
-          ) : (
-            <Bookmark className="w-5 h-5" />
-          )}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onToggleBookmark(entry)}
+            aria-label={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
+            className={`
+              p-2 rounded-full transition-all duration-200
+              ${isBookmarked 
+                ? 'bg-ink-900 dark:bg-ink-100 text-white dark:text-ink-900' 
+                : 'hover:bg-ink-100 dark:hover:bg-ink-800 text-ink-600 dark:text-ink-400'
+              }
+            `}
+          >
+            {isBookmarked ? (
+              <BookmarkCheck className="w-5 h-5" />
+            ) : (
+              <Bookmark className="w-5 h-5" />
+            )}
+          </button>
+          <button
+            onClick={handleShare}
+            aria-label="Share image"
+            className="p-2 rounded-full hover:bg-ink-100 dark:hover:bg-ink-800 text-ink-600 dark:text-ink-400 transition-colors"
+          >
+            <Share2 className="w-5 h-5" />
+          </button>
+        </div>
 
         {hdUrl && (
           <a
@@ -184,7 +204,7 @@ export default function NasaCard({ entry, isBookmarked, onToggleBookmark, index 
       {/* Credit */}
       <div className="px-6 md:px-8 pb-4">
         <p className="text-xs text-ink-400 dark:text-ink-600 font-sans">
-          NASA Astronomy Picture of the Day
+          NASA Astronomy Picture of the Day · Public domain
         </p>
       </div>
     </article>

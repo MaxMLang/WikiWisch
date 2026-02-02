@@ -67,11 +67,17 @@ export default function NasaFeed({
   }
 
   if (error) {
+    const isRateLimit = error.message?.includes('rate limit')
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-4">
         <AlertCircle className="w-12 h-12 text-ink-400 dark:text-ink-500" />
         <p className="font-serif text-lg text-ink-600 dark:text-ink-400 text-center">
-          Couldn't fetch from NASA.
+          {isRateLimit ? 'NASA API rate limit reached.' : "Couldn't fetch from NASA."}
+        </p>
+        <p className="font-sans text-sm text-ink-400 dark:text-ink-500 text-center max-w-sm">
+          {isRateLimit 
+            ? 'The free API has hourly limits. Please try again in a few minutes.' 
+            : 'Check your connection and try again.'}
         </p>
         <button
           onClick={handleRefresh}
