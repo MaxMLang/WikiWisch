@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { X, Sun, Moon, Monitor, Check, ChevronUp, ChevronDown, Eye, EyeOff, ChevronRight } from 'lucide-react'
 import { ARXIV_CATEGORIES } from '../hooks/useArxivScraper'
-import { MEDRXIV_CATEGORIES, BIORXIV_CATEGORIES } from '../hooks/useBiorxivScraper'
+import { PREPRINT_CATEGORIES } from '../hooks/useBiorxivScraper'
 
 const AVAILABLE_CATEGORIES = [
   { id: 'science', label: 'Science', emoji: '🔬' },
@@ -23,8 +23,7 @@ const THEME_OPTIONS = [
 const ALL_TABS = {
   wiki: { label: 'Wikipedia', emoji: '📖', description: 'Random Wikipedia articles' },
   arxiv: { label: 'arXiv', emoji: '📄', description: 'Open-access research papers' },
-  medrxiv: { label: 'medRxiv', emoji: '🏥', description: 'Health sciences preprints' },
-  biorxiv: { label: 'bioRxiv', emoji: '🧬', description: 'Biology preprints' },
+  preprints: { label: 'med/bioRxiv', emoji: '🧬', description: 'Health & biology preprints' },
   art: { label: 'Art', emoji: '🖼️', description: 'Art Institute of Chicago' },
   nasa: { label: 'NASA', emoji: '🚀', description: 'Astronomy Picture of the Day' },
   history: { label: 'On This Day', emoji: '📅', description: 'Historical events' },
@@ -39,10 +38,8 @@ export default function SettingsModal({
   toggleCategory,
   arxivCategory,
   setArxivCategory,
-  medrxivCategory,
-  setMedrxivCategory,
-  biorxivCategory,
-  setBiorxivCategory,
+  preprintCategory,
+  setPreprintCategory,
   tabOrder,
   setTabOrder,
   enabledTabs,
@@ -86,8 +83,7 @@ export default function SettingsModal({
 
   // Get current category labels
   const arxivLabel = ARXIV_CATEGORIES.find(c => c.id === arxivCategory)?.label || 'All'
-  const medrxivLabel = MEDRXIV_CATEGORIES.find(c => c.id === medrxivCategory)?.label || 'All'
-  const biorxivLabel = BIORXIV_CATEGORIES.find(c => c.id === biorxivCategory)?.label || 'All'
+  const preprintLabel = PREPRINT_CATEGORIES.find(c => c.id === preprintCategory)?.label || 'All'
 
   if (!isOpen) return null
 
@@ -253,7 +249,7 @@ export default function SettingsModal({
             
             {!researchTopicsOpen && (
               <p className="font-sans text-xs text-ink-400 dark:text-ink-500 mt-1">
-                arXiv: {arxivLabel} · medRxiv: {medrxivLabel} · bioRxiv: {biorxivLabel}
+                arXiv: {arxivLabel} · med/bioRxiv: {preprintLabel}
               </p>
             )}
 
@@ -300,46 +296,21 @@ export default function SettingsModal({
                   </div>
                 </div>
 
-                {/* medRxiv Topic */}
+                {/* med/bioRxiv Topic */}
                 <div>
                   <h4 className="font-sans text-sm font-medium text-ink-700 dark:text-ink-300 mb-3 flex items-center gap-2">
-                    <span className="text-lg">🏥</span> medRxiv
+                    <span className="text-lg">🧬</span> med/bioRxiv
                   </h4>
+                  <p className="font-sans text-xs text-ink-400 dark:text-ink-500 mb-3">
+                    Preprints from both medRxiv and bioRxiv
+                  </p>
                   <div className="space-y-1 max-h-48 overflow-y-auto">
-                    {MEDRXIV_CATEGORIES.map((cat) => {
-                      const isSelected = medrxivCategory === cat.id
+                    {PREPRINT_CATEGORIES.map((cat) => {
+                      const isSelected = preprintCategory === cat.id
                       return (
                         <button
                           key={cat.id}
-                          onClick={() => setMedrxivCategory(cat.id)}
-                          className={`
-                            w-full flex items-center justify-between p-2 rounded transition-all text-left
-                            ${isSelected 
-                              ? 'bg-ink-100 dark:bg-ink-800 text-ink-900 dark:text-ink-100' 
-                              : 'hover:bg-ink-50 dark:hover:bg-ink-800/50 text-ink-600 dark:text-ink-400'
-                            }
-                          `}
-                        >
-                          <span className="font-sans text-sm">{cat.label}</span>
-                          {isSelected && <Check className="w-4 h-4" />}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                {/* bioRxiv Topic */}
-                <div>
-                  <h4 className="font-sans text-sm font-medium text-ink-700 dark:text-ink-300 mb-3 flex items-center gap-2">
-                    <span className="text-lg">🧬</span> bioRxiv
-                  </h4>
-                  <div className="space-y-1 max-h-48 overflow-y-auto">
-                    {BIORXIV_CATEGORIES.map((cat) => {
-                      const isSelected = biorxivCategory === cat.id
-                      return (
-                        <button
-                          key={cat.id}
-                          onClick={() => setBiorxivCategory(cat.id)}
+                          onClick={() => setPreprintCategory(cat.id)}
                           className={`
                             w-full flex items-center justify-between p-2 rounded transition-all text-left
                             ${isSelected 

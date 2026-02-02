@@ -1,8 +1,17 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
 
-// bioRxiv/medRxiv categories
-export const BIORXIV_CATEGORIES = [
-  { id: 'all', label: 'All Categories', server: 'biorxiv' },
+// Combined categories for both bioRxiv and medRxiv
+export const PREPRINT_CATEGORIES = [
+  { id: 'all', label: 'All Categories' },
+  // medRxiv categories
+  { id: 'infectious-diseases', label: 'Infectious Diseases', server: 'medrxiv' },
+  { id: 'epidemiology', label: 'Epidemiology', server: 'medrxiv' },
+  { id: 'public-health', label: 'Public Health', server: 'medrxiv' },
+  { id: 'psychiatry', label: 'Psychiatry', server: 'medrxiv' },
+  { id: 'cardiovascular-medicine', label: 'Cardiovascular Medicine', server: 'medrxiv' },
+  { id: 'oncology', label: 'Oncology', server: 'medrxiv' },
+  { id: 'neurology', label: 'Neurology', server: 'medrxiv' },
+  // bioRxiv categories
   { id: 'neuroscience', label: 'Neuroscience', server: 'biorxiv' },
   { id: 'genetics', label: 'Genetics', server: 'biorxiv' },
   { id: 'genomics', label: 'Genomics', server: 'biorxiv' },
@@ -13,19 +22,6 @@ export const BIORXIV_CATEGORIES = [
   { id: 'microbiology', label: 'Microbiology', server: 'biorxiv' },
   { id: 'cancer-biology', label: 'Cancer Biology', server: 'biorxiv' },
   { id: 'evolutionary-biology', label: 'Evolutionary Biology', server: 'biorxiv' },
-]
-
-export const MEDRXIV_CATEGORIES = [
-  { id: 'all', label: 'All Categories', server: 'medrxiv' },
-  { id: 'infectious-diseases', label: 'Infectious Diseases', server: 'medrxiv' },
-  { id: 'epidemiology', label: 'Epidemiology', server: 'medrxiv' },
-  { id: 'public-health', label: 'Public Health', server: 'medrxiv' },
-  { id: 'psychiatry', label: 'Psychiatry', server: 'medrxiv' },
-  { id: 'cardiovascular-medicine', label: 'Cardiovascular Medicine', server: 'medrxiv' },
-  { id: 'oncology', label: 'Oncology', server: 'medrxiv' },
-  { id: 'neurology', label: 'Neurology', server: 'medrxiv' },
-  { id: 'genetic-and-genomic-medicine', label: 'Genetic & Genomic Medicine', server: 'medrxiv' },
-  { id: 'health-informatics', label: 'Health Informatics', server: 'medrxiv' },
 ]
 
 const API_BASE = 'https://api.biorxiv.org/details'
@@ -40,34 +36,51 @@ function getDateRange() {
   return { start: format(start), end: format(end) }
 }
 
-// Fetch papers from bioRxiv/medRxiv
-async function fetchPapers(server, category, pageParam = 0) {
-  const { start, end } = getDateRange()
-  const cursor = pageParam * 100 // Fetch more to allow for filtering
-  
+// Fetch papers from a single server
+async function fetchFromServer(server, start, end, cursor) {
   const url = `${API_BASE}/${server}/${start}/${end}/${cursor}`
   const response = await fetch(url)
   
-  if (!response.ok) throw new Error(`Failed to fetch from ${server}`)
+  if (!response.ok) return []
   
   const data = await response.json()
+  return (data.collection || []).map((paper) => ({
+    id: paper.doi,
+    title: paper.title || 'Untitled',
+    authors: paper.authors ? paper.authors.split('; ').slice(0, 5) : [],
+    abstract: paper.abstract || '',
+    category: paper.category || '',
+    date: paper.date || '',
+    server: server,
+    doi: paper.doi,
+    version: paper.version,
+    absLink: `https://www.${server}.org/content/${paper.doi}v${paper.version}`,
+    pdfLink: `https://www.${server}.org/content/${paper.doi}v${paper.version}.full.pdf`,
+  }))
+}
+
+// Fetch papers from both servers
+async function fetchPapers(category, pageParam = 0) {
+  const { start, end } = getDateRange()
+  const cursor = pageParam * 50
   
-  let papers = (data.collection || [])
-    // Filter to only show papers from the requested server
-    .filter((paper) => (paper.server || server) === server)
-    .map((paper) => ({
-      id: paper.doi,
-      title: paper.title || 'Untitled',
-      authors: paper.authors ? paper.authors.split('; ').slice(0, 5) : [],
-      abstract: paper.abstract || '',
-      category: paper.category || '',
-      date: paper.date || '',
-      server: paper.server || server,
-      doi: paper.doi,
-      version: paper.version,
-      absLink: `https://www.${paper.server || server}.org/content/${paper.doi}v${paper.version}`,
-      pdfLink: `https://www.${paper.server || server}.org/content/${paper.doi}v${paper.version}.full.pdf`,
-    }))
+  // If category is 'all', fetch from both servers
+  // Otherwise, check which server the category belongs to
+  const categoryInfo = PREPRINT_CATEGORIES.find(c => c.id === category)
+  
+  let papers = []
+  
+  if (category === 'all' || !categoryInfo?.server) {
+    // Fetch from both servers in parallel
+    const [medrxivPapers, biorxivPapers] = await Promise.all([
+      fetchFromServer('medrxiv', start, end, cursor),
+      fetchFromServer('biorxiv', start, end, cursor),
+    ])
+    papers = [...medrxivPapers, ...biorxivPapers]
+  } else {
+    // Fetch from specific server
+    papers = await fetchFromServer(categoryInfo.server, start, end, cursor)
+  }
   
   // Filter by category if not 'all'
   if (category && category !== 'all') {
@@ -76,8 +89,10 @@ async function fetchPapers(server, category, pageParam = 0) {
     )
   }
   
-  // Take first 30 after filtering
-  papers = papers.slice(0, 30)
+  // Sort by date (newest first) and take first 20
+  papers = papers
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, 20)
   
   return {
     papers,
@@ -86,10 +101,10 @@ async function fetchPapers(server, category, pageParam = 0) {
   }
 }
 
-export function useBiorxivScraper(server = 'medrxiv', category = 'all') {
+export function useBiorxivScraper(category = 'all') {
   return useInfiniteQuery({
-    queryKey: ['biorxiv-papers', server, category],
-    queryFn: ({ pageParam }) => fetchPapers(server, category, pageParam),
+    queryKey: ['preprint-papers', category],
+    queryFn: ({ pageParam }) => fetchPapers(category, pageParam),
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.hasMore ? lastPage.nextCursor : undefined,
     staleTime: 1000 * 60 * 10, // 10 minutes

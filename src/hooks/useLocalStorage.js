@@ -6,13 +6,12 @@ const defaultState = {
   theme: 'system',
   categories: ['science', 'history', 'technology', 'arts', 'geography'],
   arxivCategory: 'cs.AI',
-  medrxivCategory: 'all',
-  biorxivCategory: 'all',
-  tabOrder: ['wiki', 'arxiv', 'medrxiv', 'biorxiv', 'art', 'nasa', 'history'],
-  enabledTabs: ['wiki', 'arxiv', 'medrxiv', 'art', 'nasa', 'history'], // biorxiv not enabled by default
+  preprintCategory: 'all',
+  tabOrder: ['wiki', 'arxiv', 'preprints', 'art', 'nasa', 'history'],
+  enabledTabs: ['wiki', 'arxiv', 'preprints', 'art', 'nasa', 'history'],
   bookmarks: [],
   arxivBookmarks: [],
-  biorxivBookmarks: [], // covers both medrxiv and biorxiv
+  preprintBookmarks: [], // covers both medrxiv and biorxiv
   artBookmarks: [],
   nasaBookmarks: [],
   historyBookmarks: [],
@@ -25,22 +24,35 @@ export function useLocalStorage() {
       if (stored) {
         const parsed = JSON.parse(stored)
         
-        // Migration: ensure new tabs are in tabOrder and enabledTabs
+        // Migration: convert old medrxiv/biorxiv tabs to single preprints tab
         let tabOrder = parsed.tabOrder || defaultState.tabOrder
         let enabledTabs = parsed.enabledTabs || defaultState.enabledTabs
         
-        // Add medrxiv and biorxiv if missing from tabOrder
-        if (!tabOrder.includes('medrxiv')) {
-          const arxivIndex = tabOrder.indexOf('arxiv')
-          tabOrder = [...tabOrder.slice(0, arxivIndex + 1), 'medrxiv', 'biorxiv', ...tabOrder.slice(arxivIndex + 1)]
+        // Remove old separate tabs and add combined preprints
+        if (tabOrder.includes('medrxiv') || tabOrder.includes('biorxiv')) {
+          const hadMedrxiv = enabledTabs.includes('medrxiv')
+          const hadBiorxiv = enabledTabs.includes('biorxiv')
+          
+          tabOrder = tabOrder.filter(t => t !== 'medrxiv' && t !== 'biorxiv')
+          enabledTabs = enabledTabs.filter(t => t !== 'medrxiv' && t !== 'biorxiv')
+          
+          if (!tabOrder.includes('preprints')) {
+            const arxivIndex = tabOrder.indexOf('arxiv')
+            tabOrder.splice(arxivIndex + 1, 0, 'preprints')
+          }
+          
+          if ((hadMedrxiv || hadBiorxiv) && !enabledTabs.includes('preprints')) {
+            enabledTabs.push('preprints')
+          }
         }
         
-        // Add medrxiv to enabledTabs if missing (biorxiv stays disabled by default)
-        if (!enabledTabs.includes('medrxiv') && !enabledTabs.includes('biorxiv')) {
-          enabledTabs = [...enabledTabs, 'medrxiv']
-        }
+        // Migrate old biorxivBookmarks to preprintBookmarks
+        const preprintBookmarks = parsed.preprintBookmarks || parsed.biorxivBookmarks || []
         
-        return { ...defaultState, ...parsed, tabOrder, enabledTabs }
+        // Migrate old category settings
+        const preprintCategory = parsed.preprintCategory || parsed.medrxivCategory || parsed.biorxivCategory || 'all'
+        
+        return { ...defaultState, ...parsed, tabOrder, enabledTabs, preprintBookmarks, preprintCategory }
       }
     } catch (e) {
       console.error('Failed to parse localStorage:', e)
@@ -81,12 +93,8 @@ export function useLocalStorage() {
     setState((prev) => ({ ...prev, arxivCategory }))
   }, [])
 
-  const setMedrxivCategory = useCallback((medrxivCategory) => {
-    setState((prev) => ({ ...prev, medrxivCategory }))
-  }, [])
-
-  const setBiorxivCategory = useCallback((biorxivCategory) => {
-    setState((prev) => ({ ...prev, biorxivCategory }))
+  const setPreprintCategory = useCallback((preprintCategory) => {
+    setState((prev) => ({ ...prev, preprintCategory }))
   }, [])
 
   // Toggle tab enabled/disabled (at least one must remain enabled)
@@ -150,27 +158,27 @@ export function useLocalStorage() {
   const isArxivBookmarked = useCallback((id) => state.arxivBookmarks.some((b) => b.id === id), [state.arxivBookmarks])
   const clearAllArxivBookmarks = useCallback(() => setState((prev) => ({ ...prev, arxivBookmarks: [] })), [])
 
-  // bioRxiv/medRxiv bookmarks
-  const addBiorxivBookmark = useCallback((paper) => {
+  // Preprint (bioRxiv/medRxiv) bookmarks
+  const addPreprintBookmark = useCallback((paper) => {
     setState((prev) => {
-      const biorxivBookmarks = prev.biorxivBookmarks || []
-      if (biorxivBookmarks.some((b) => b.id === paper.id)) return prev
+      const preprintBookmarks = prev.preprintBookmarks || []
+      if (preprintBookmarks.some((b) => b.id === paper.id)) return prev
       return {
         ...prev,
-        biorxivBookmarks: [
+        preprintBookmarks: [
           { id: paper.id, title: paper.title, authors: paper.authors?.slice(0, 3), server: paper.server, absLink: paper.absLink, savedAt: Date.now() },
-          ...biorxivBookmarks,
+          ...preprintBookmarks,
         ],
       }
     })
   }, [])
 
-  const removeBiorxivBookmark = useCallback((id) => {
-    setState((prev) => ({ ...prev, biorxivBookmarks: (prev.biorxivBookmarks || []).filter((b) => b.id !== id) }))
+  const removePreprintBookmark = useCallback((id) => {
+    setState((prev) => ({ ...prev, preprintBookmarks: (prev.preprintBookmarks || []).filter((b) => b.id !== id) }))
   }, [])
 
-  const isBiorxivBookmarked = useCallback((id) => (state.biorxivBookmarks || []).some((b) => b.id === id), [state.biorxivBookmarks])
-  const clearAllBiorxivBookmarks = useCallback(() => setState((prev) => ({ ...prev, biorxivBookmarks: [] })), [])
+  const isPreprintBookmarked = useCallback((id) => (state.preprintBookmarks || []).some((b) => b.id === id), [state.preprintBookmarks])
+  const clearAllPreprintBookmarks = useCallback(() => setState((prev) => ({ ...prev, preprintBookmarks: [] })), [])
 
   // Art bookmarks
   const addArtBookmark = useCallback((artwork) => {
@@ -239,13 +247,12 @@ export function useLocalStorage() {
     theme: state.theme,
     categories: state.categories,
     arxivCategory: state.arxivCategory || defaultState.arxivCategory,
-    medrxivCategory: state.medrxivCategory || defaultState.medrxivCategory,
-    biorxivCategory: state.biorxivCategory || defaultState.biorxivCategory,
+    preprintCategory: state.preprintCategory || defaultState.preprintCategory,
     tabOrder: state.tabOrder || defaultState.tabOrder,
     enabledTabs: state.enabledTabs || defaultState.enabledTabs,
     bookmarks: state.bookmarks,
     arxivBookmarks: state.arxivBookmarks,
-    biorxivBookmarks: state.biorxivBookmarks || [],
+    preprintBookmarks: state.preprintBookmarks || [],
     artBookmarks: state.artBookmarks,
     nasaBookmarks: state.nasaBookmarks,
     historyBookmarks: state.historyBookmarks,
@@ -253,16 +260,15 @@ export function useLocalStorage() {
     toggleCategory,
     setCategories,
     setArxivCategory,
-    setMedrxivCategory,
-    setBiorxivCategory,
+    setPreprintCategory,
     setTabOrder,
     toggleTab,
     // Wikipedia
     addBookmark, removeBookmark, isBookmarked, clearAllBookmarks,
     // arXiv
     addArxivBookmark, removeArxivBookmark, isArxivBookmarked, clearAllArxivBookmarks,
-    // bioRxiv/medRxiv
-    addBiorxivBookmark, removeBiorxivBookmark, isBiorxivBookmarked, clearAllBiorxivBookmarks,
+    // Preprints
+    addPreprintBookmark, removePreprintBookmark, isPreprintBookmarked, clearAllPreprintBookmarks,
     // Art
     addArtBookmark, removeArtBookmark, isArtBookmarked, clearAllArtBookmarks,
     // NASA

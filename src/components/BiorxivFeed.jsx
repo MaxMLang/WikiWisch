@@ -4,11 +4,11 @@ import { useBiorxivScraper } from '../hooks/useBiorxivScraper'
 import BiorxivCard from './BiorxivCard'
 
 export default function BiorxivFeed({ 
-  server = 'medrxiv',
   category = 'all',
-  isBiorxivBookmarked,
-  onToggleBiorxivBookmark,
-  showToast
+  isPreprintBookmarked,
+  onTogglePreprintBookmark,
+  showToast,
+  onOpenSettings
 }) {
   const loadMoreRef = useRef(null)
 
@@ -20,7 +20,7 @@ export default function BiorxivFeed({
     fetchNextPage,
     error,
     refetch,
-  } = useBiorxivScraper(server, category)
+  } = useBiorxivScraper(category)
 
   const papers = useMemo(() => {
     if (!data?.pages) return []
@@ -54,8 +54,6 @@ export default function BiorxivFeed({
     showToast(false)
   }
 
-  const serverLabel = server === 'medrxiv' ? 'medRxiv' : 'bioRxiv'
-
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -75,7 +73,7 @@ export default function BiorxivFeed({
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-4">
         <AlertCircle className="w-12 h-12 text-ink-400 dark:text-ink-500" />
         <p className="font-serif text-lg text-ink-600 dark:text-ink-400 text-center">
-          Couldn't fetch papers from {serverLabel}.
+          Couldn't fetch preprints.
         </p>
         <button
           onClick={handleRefresh}
@@ -93,7 +91,13 @@ export default function BiorxivFeed({
       {papers.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-4">
           <p className="font-serif text-lg text-ink-500 dark:text-ink-400 text-center">
-            No papers found.
+            No preprints found for this topic.
+          </p>
+          <p className="font-sans text-sm text-ink-400 dark:text-ink-500 text-center">
+            Try selecting a different category in{' '}
+            <button onClick={onOpenSettings} className="underline hover:text-ink-700 dark:hover:text-ink-300">
+              Settings
+            </button>.
           </p>
         </div>
       ) : (
@@ -103,8 +107,8 @@ export default function BiorxivFeed({
               key={`${paper.id}-${index}`}
               paper={paper}
               index={index}
-              isBookmarked={isBiorxivBookmarked(paper.id)}
-              onToggleBookmark={onToggleBiorxivBookmark}
+              isBookmarked={isPreprintBookmarked(paper.id)}
+              onToggleBookmark={onTogglePreprintBookmark}
             />
           ))}
         </div>
@@ -118,7 +122,7 @@ export default function BiorxivFeed({
           <div className="flex items-center gap-3">
             <Loader2 className="w-5 h-5 text-ink-400 dark:text-ink-500 animate-spin" />
             <span className="font-sans text-sm text-ink-500 dark:text-ink-400">
-              Loading more papers...
+              Loading more preprints...
             </span>
           </div>
         )}

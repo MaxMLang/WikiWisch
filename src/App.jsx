@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Settings, Bookmark, RefreshCw, Info, Heart } from 'lucide-react'
 import { useWikiScraper } from './hooks/useWikiScraper'
 import { useLocalStorage } from './hooks/useLocalStorage'
+import { PREPRINT_CATEGORIES } from './hooks/useBiorxivScraper'
+import { ARXIV_CATEGORIES } from './hooks/useArxivScraper'
 import Feed from './components/Feed'
 import ArxivFeed from './components/ArxivFeed'
 import BiorxivFeed from './components/BiorxivFeed'
@@ -16,8 +18,7 @@ import Toast from './components/Toast'
 const ALL_TABS = {
   wiki: { id: 'wiki', label: 'Wiki' },
   arxiv: { id: 'arxiv', label: 'arXiv' },
-  medrxiv: { id: 'medrxiv', label: 'medRxiv' },
-  biorxiv: { id: 'biorxiv', label: 'bioRxiv' },
+  preprints: { id: 'preprints', label: 'med/bioRxiv' },
   art: { id: 'art', label: 'Art' },
   nasa: { id: 'nasa', label: 'NASA' },
   history: { id: 'history', label: 'Today' },
@@ -33,14 +34,14 @@ function App() {
   const lastScrollY = useRef(0)
 
   const {
-    theme, categories, arxivCategory, medrxivCategory, biorxivCategory, tabOrder, enabledTabs, 
-    setTheme, toggleCategory, setArxivCategory, setMedrxivCategory, setBiorxivCategory, setTabOrder, toggleTab,
+    theme, categories, arxivCategory, preprintCategory, tabOrder, enabledTabs, 
+    setTheme, toggleCategory, setArxivCategory, setPreprintCategory, setTabOrder, toggleTab,
     // Wikipedia
     bookmarks, addBookmark, removeBookmark, isBookmarked, clearAllBookmarks,
     // arXiv
     arxivBookmarks, addArxivBookmark, removeArxivBookmark, isArxivBookmarked, clearAllArxivBookmarks,
-    // bioRxiv/medRxiv
-    biorxivBookmarks, addBiorxivBookmark, removeBiorxivBookmark, isBiorxivBookmarked, clearAllBiorxivBookmarks,
+    // Preprints (med/bioRxiv)
+    preprintBookmarks, addPreprintBookmark, removePreprintBookmark, isPreprintBookmarked, clearAllPreprintBookmarks,
     // Art
     artBookmarks, addArtBookmark, removeArtBookmark, isArtBookmarked, clearAllArtBookmarks,
     // NASA
@@ -110,8 +111,8 @@ function App() {
     isArxivBookmarked(paper.id) ? removeArxivBookmark(paper.id) : addArxivBookmark(paper)
   }
 
-  const handleToggleBiorxivBookmark = (paper) => {
-    isBiorxivBookmarked(paper.id) ? removeBiorxivBookmark(paper.id) : addBiorxivBookmark(paper)
+  const handleTogglePreprintBookmark = (paper) => {
+    isPreprintBookmarked(paper.id) ? removePreprintBookmark(paper.id) : addPreprintBookmark(paper)
   }
 
   const handleToggleArtBookmark = (artwork) => {
@@ -144,26 +145,31 @@ function App() {
     setToast({ visible: false, loading: false })
   }, [])
 
-  const totalBookmarks = bookmarks.length + arxivBookmarks.length + biorxivBookmarks.length + artBookmarks.length + nasaBookmarks.length + historyBookmarks.length
+  const totalBookmarks = bookmarks.length + arxivBookmarks.length + preprintBookmarks.length + artBookmarks.length + nasaBookmarks.length + historyBookmarks.length
+
+  const getPreprintCategoryLabel = () => {
+    const cat = PREPRINT_CATEGORIES.find(c => c.id === preprintCategory)
+    return cat?.label || 'All Categories'
+  }
 
   if (view === 'saved') {
     return (
       <SavedArticles
         bookmarks={bookmarks}
         arxivBookmarks={arxivBookmarks}
-        biorxivBookmarks={biorxivBookmarks}
+        preprintBookmarks={preprintBookmarks}
         artBookmarks={artBookmarks}
         nasaBookmarks={nasaBookmarks}
         historyBookmarks={historyBookmarks}
         onRemoveBookmark={removeBookmark}
         onRemoveArxivBookmark={removeArxivBookmark}
-        onRemoveBiorxivBookmark={removeBiorxivBookmark}
+        onRemovePreprintBookmark={removePreprintBookmark}
         onRemoveArtBookmark={removeArtBookmark}
         onRemoveNasaBookmark={removeNasaBookmark}
         onRemoveHistoryBookmark={removeHistoryBookmark}
         onClearAll={clearAllBookmarks}
         onClearAllArxiv={clearAllArxivBookmarks}
-        onClearAllBiorxiv={clearAllBiorxivBookmarks}
+        onClearAllPreprints={clearAllPreprintBookmarks}
         onClearAllArt={clearAllArtBookmarks}
         onClearAllNasa={clearAllNasaBookmarks}
         onClearAllHistory={clearAllHistoryBookmarks}
@@ -286,7 +292,12 @@ function App() {
           <>
             <div className="mb-6">
               <h2 className="font-serif text-2xl font-semibold text-ink-900 dark:text-ink-50 mb-2">Latest Papers</h2>
-              <p className="font-sans text-sm text-ink-500 dark:text-ink-400">Fresh research from arXiv</p>
+              <p className="font-sans text-sm text-ink-500 dark:text-ink-400">
+                Fresh research from arXiv. Topic:{' '}
+                <button onClick={() => setSettingsOpen(true)} className="underline hover:text-ink-700 dark:hover:text-ink-300">
+                  {ARXIV_CATEGORIES.find(c => c.id === arxivCategory)?.label || 'Select in Settings'}
+                </button>
+              </p>
             </div>
             <ArxivFeed
               arxivCategory={arxivCategory}
@@ -299,34 +310,23 @@ function App() {
           </>
         )}
 
-        {activeTab === 'medrxiv' && (
+        {activeTab === 'preprints' && (
           <>
             <div className="mb-6">
-              <h2 className="font-serif text-2xl font-semibold text-ink-900 dark:text-ink-50 mb-2">Health Sciences</h2>
-              <p className="font-sans text-sm text-ink-500 dark:text-ink-400">Latest preprints from medRxiv</p>
+              <h2 className="font-serif text-2xl font-semibold text-ink-900 dark:text-ink-50 mb-2">Preprints</h2>
+              <p className="font-sans text-sm text-ink-500 dark:text-ink-400">
+                Latest from medRxiv & bioRxiv. Topic:{' '}
+                <button onClick={() => setSettingsOpen(true)} className="underline hover:text-ink-700 dark:hover:text-ink-300">
+                  {getPreprintCategoryLabel()}
+                </button>
+              </p>
             </div>
             <BiorxivFeed
-              server="medrxiv"
-              category={medrxivCategory}
-              isBiorxivBookmarked={isBiorxivBookmarked}
-              onToggleBiorxivBookmark={handleToggleBiorxivBookmark}
+              category={preprintCategory}
+              isPreprintBookmarked={isPreprintBookmarked}
+              onTogglePreprintBookmark={handleTogglePreprintBookmark}
               showToast={showToast}
-            />
-          </>
-        )}
-
-        {activeTab === 'biorxiv' && (
-          <>
-            <div className="mb-6">
-              <h2 className="font-serif text-2xl font-semibold text-ink-900 dark:text-ink-50 mb-2">Biology</h2>
-              <p className="font-sans text-sm text-ink-500 dark:text-ink-400">Latest preprints from bioRxiv</p>
-            </div>
-            <BiorxivFeed
-              server="biorxiv"
-              category={biorxivCategory}
-              isBiorxivBookmarked={isBiorxivBookmarked}
-              onToggleBiorxivBookmark={handleToggleBiorxivBookmark}
-              showToast={showToast}
+              onOpenSettings={() => setSettingsOpen(true)}
             />
           </>
         )}
@@ -349,7 +349,7 @@ function App() {
           <>
             <div className="mb-6">
               <h2 className="font-serif text-2xl font-semibold text-ink-900 dark:text-ink-50 mb-2">Astronomy Picture of the Day</h2>
-              <p className="font-sans text-sm text-ink-500 dark:text-ink-400">Daily cosmic discoveries from NASA</p>
+              <p className="font-sans text-sm text-ink-500 dark:text-ink-400">Daily cosmic discoveries from NASA (public domain only)</p>
             </div>
             <NasaFeed
               isNasaBookmarked={isNasaBookmarked}
@@ -397,10 +397,8 @@ function App() {
         toggleCategory={toggleCategory} 
         arxivCategory={arxivCategory} 
         setArxivCategory={setArxivCategory}
-        medrxivCategory={medrxivCategory}
-        setMedrxivCategory={setMedrxivCategory}
-        biorxivCategory={biorxivCategory}
-        setBiorxivCategory={setBiorxivCategory}
+        preprintCategory={preprintCategory}
+        setPreprintCategory={setPreprintCategory}
         tabOrder={tabOrder} 
         setTabOrder={setTabOrder}
         enabledTabs={enabledTabs}
