@@ -5,6 +5,7 @@ import BiorxivCard from './BiorxivCard'
 
 export default function BiorxivFeed({ 
   server = 'medrxiv',
+  category = 'all',
   isBiorxivBookmarked,
   onToggleBiorxivBookmark,
   showToast
@@ -19,7 +20,7 @@ export default function BiorxivFeed({
     fetchNextPage,
     error,
     refetch,
-  } = useBiorxivScraper(server)
+  } = useBiorxivScraper(server, category)
 
   const papers = useMemo(() => {
     if (!data?.pages) return []

@@ -41,9 +41,9 @@ function getDateRange() {
 }
 
 // Fetch papers from bioRxiv/medRxiv
-async function fetchPapers(server, pageParam = 0) {
+async function fetchPapers(server, category, pageParam = 0) {
   const { start, end } = getDateRange()
-  const cursor = pageParam * 30
+  const cursor = pageParam * 100 // Fetch more to allow for filtering
   
   const url = `${API_BASE}/${server}/${start}/${end}/${cursor}`
   const response = await fetch(url)
@@ -52,7 +52,7 @@ async function fetchPapers(server, pageParam = 0) {
   
   const data = await response.json()
   
-  const papers = (data.collection || []).map((paper) => ({
+  let papers = (data.collection || []).map((paper) => ({
     id: paper.doi,
     title: paper.title || 'Untitled',
     authors: paper.authors ? paper.authors.split('; ').slice(0, 5) : [],
@@ -66,17 +66,27 @@ async function fetchPapers(server, pageParam = 0) {
     pdfLink: `https://www.${server}.org/content/${paper.doi}v${paper.version}.full.pdf`,
   }))
   
+  // Filter by category if not 'all'
+  if (category && category !== 'all') {
+    papers = papers.filter((p) => 
+      p.category.toLowerCase().includes(category.toLowerCase().replace(/-/g, ' '))
+    )
+  }
+  
+  // Take first 30 after filtering
+  papers = papers.slice(0, 30)
+  
   return {
     papers,
     nextCursor: pageParam + 1,
-    hasMore: papers.length === 30,
+    hasMore: papers.length > 0,
   }
 }
 
-export function useBiorxivScraper(server = 'medrxiv') {
+export function useBiorxivScraper(server = 'medrxiv', category = 'all') {
   return useInfiniteQuery({
-    queryKey: ['biorxiv-papers', server],
-    queryFn: ({ pageParam }) => fetchPapers(server, pageParam),
+    queryKey: ['biorxiv-papers', server, category],
+    queryFn: ({ pageParam }) => fetchPapers(server, category, pageParam),
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.hasMore ? lastPage.nextCursor : undefined,
     staleTime: 1000 * 60 * 10, // 10 minutes

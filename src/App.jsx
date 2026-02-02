@@ -33,7 +33,8 @@ function App() {
   const lastScrollY = useRef(0)
 
   const {
-    theme, categories, arxivCategory, tabOrder, enabledTabs, setTheme, toggleCategory, setArxivCategory, setTabOrder, toggleTab,
+    theme, categories, arxivCategory, medrxivCategory, biorxivCategory, tabOrder, enabledTabs, 
+    setTheme, toggleCategory, setArxivCategory, setMedrxivCategory, setBiorxivCategory, setTabOrder, toggleTab,
     // Wikipedia
     bookmarks, addBookmark, removeBookmark, isBookmarked, clearAllBookmarks,
     // arXiv
@@ -306,6 +307,7 @@ function App() {
             </div>
             <BiorxivFeed
               server="medrxiv"
+              category={medrxivCategory}
               isBiorxivBookmarked={isBiorxivBookmarked}
               onToggleBiorxivBookmark={handleToggleBiorxivBookmark}
               showToast={showToast}
@@ -321,6 +323,7 @@ function App() {
             </div>
             <BiorxivFeed
               server="biorxiv"
+              category={biorxivCategory}
               isBiorxivBookmarked={isBiorxivBookmarked}
               onToggleBiorxivBookmark={handleToggleBiorxivBookmark}
               showToast={showToast}
@@ -393,7 +396,11 @@ function App() {
         categories={categories} 
         toggleCategory={toggleCategory} 
         arxivCategory={arxivCategory} 
-        setArxivCategory={setArxivCategory} 
+        setArxivCategory={setArxivCategory}
+        medrxivCategory={medrxivCategory}
+        setMedrxivCategory={setMedrxivCategory}
+        biorxivCategory={biorxivCategory}
+        setBiorxivCategory={setBiorxivCategory}
         tabOrder={tabOrder} 
         setTabOrder={setTabOrder}
         enabledTabs={enabledTabs}

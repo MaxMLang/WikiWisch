@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react'
-import { X, Sun, Moon, Monitor, Check, ChevronUp, ChevronDown, Eye, EyeOff } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { X, Sun, Moon, Monitor, Check, ChevronUp, ChevronDown, Eye, EyeOff, ChevronRight } from 'lucide-react'
 import { ARXIV_CATEGORIES } from '../hooks/useArxivScraper'
+import { MEDRXIV_CATEGORIES, BIORXIV_CATEGORIES } from '../hooks/useBiorxivScraper'
 
 const AVAILABLE_CATEGORIES = [
   { id: 'science', label: 'Science', emoji: '🔬' },
@@ -38,12 +39,17 @@ export default function SettingsModal({
   toggleCategory,
   arxivCategory,
   setArxivCategory,
+  medrxivCategory,
+  setMedrxivCategory,
+  biorxivCategory,
+  setBiorxivCategory,
   tabOrder,
   setTabOrder,
   enabledTabs,
   toggleTab
 }) {
   const modalRef = useRef(null)
+  const [researchTopicsOpen, setResearchTopicsOpen] = useState(false)
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -77,6 +83,11 @@ export default function SettingsModal({
 
   const isTabEnabled = (tabId) => enabledTabs.includes(tabId)
   const canDisable = enabledTabs.length > 1
+
+  // Get current category labels
+  const arxivLabel = ARXIV_CATEGORIES.find(c => c.id === arxivCategory)?.label || 'All'
+  const medrxivLabel = MEDRXIV_CATEGORIES.find(c => c.id === medrxivCategory)?.label || 'All'
+  const biorxivLabel = BIORXIV_CATEGORIES.find(c => c.id === biorxivCategory)?.label || 'All'
 
   if (!isOpen) return null
 
@@ -228,52 +239,124 @@ export default function SettingsModal({
             </div>
           </section>
 
-          {/* arXiv Topic */}
+          {/* Research Topics - Collapsible */}
           <section>
-            <h3 className="font-sans text-sm font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-400 mb-2">
-              arXiv Topic
-            </h3>
-            <p className="font-sans text-sm text-ink-500 dark:text-ink-500 mb-4">
-              Select research area for arXiv papers
-            </p>
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {Object.entries(
-                ARXIV_CATEGORIES.reduce((acc, cat) => {
-                  if (!acc[cat.group]) acc[cat.group] = []
-                  acc[cat.group].push(cat)
-                  return acc
-                }, {})
-              ).map(([group, cats]) => (
-                <div key={group}>
-                  <p className="font-sans text-xs font-semibold uppercase tracking-wider text-ink-400 dark:text-ink-500 mb-2 mt-3 first:mt-0">
-                    {group}
-                  </p>
-                  <div className="space-y-1">
-                    {cats.map((cat) => {
-                      const isSelected = arxivCategory === cat.id
+            <button
+              onClick={() => setResearchTopicsOpen(!researchTopicsOpen)}
+              className="w-full flex items-center justify-between py-2 group"
+            >
+              <h3 className="font-sans text-sm font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-400">
+                Research Topics
+              </h3>
+              <ChevronRight className={`w-5 h-5 text-ink-400 dark:text-ink-500 transition-transform ${researchTopicsOpen ? 'rotate-90' : ''}`} />
+            </button>
+            
+            {!researchTopicsOpen && (
+              <p className="font-sans text-xs text-ink-400 dark:text-ink-500 mt-1">
+                arXiv: {arxivLabel} · medRxiv: {medrxivLabel} · bioRxiv: {biorxivLabel}
+              </p>
+            )}
+
+            {researchTopicsOpen && (
+              <div className="mt-4 space-y-6">
+                {/* arXiv Topic */}
+                <div>
+                  <h4 className="font-sans text-sm font-medium text-ink-700 dark:text-ink-300 mb-3 flex items-center gap-2">
+                    <span className="text-lg">📄</span> arXiv
+                  </h4>
+                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                    {Object.entries(
+                      ARXIV_CATEGORIES.reduce((acc, cat) => {
+                        if (!acc[cat.group]) acc[cat.group] = []
+                        acc[cat.group].push(cat)
+                        return acc
+                      }, {})
+                    ).map(([group, cats]) => (
+                      <div key={group}>
+                        <p className="font-sans text-xs font-semibold uppercase tracking-wider text-ink-400 dark:text-ink-500 mb-1 mt-2 first:mt-0">
+                          {group}
+                        </p>
+                        {cats.map((cat) => {
+                          const isSelected = arxivCategory === cat.id
+                          return (
+                            <button
+                              key={cat.id}
+                              onClick={() => setArxivCategory(cat.id)}
+                              className={`
+                                w-full flex items-center justify-between p-2 rounded transition-all text-left
+                                ${isSelected 
+                                  ? 'bg-ink-100 dark:bg-ink-800 text-ink-900 dark:text-ink-100' 
+                                  : 'hover:bg-ink-50 dark:hover:bg-ink-800/50 text-ink-600 dark:text-ink-400'
+                                }
+                              `}
+                            >
+                              <span className="font-sans text-sm">{cat.label}</span>
+                              {isSelected && <Check className="w-4 h-4" />}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* medRxiv Topic */}
+                <div>
+                  <h4 className="font-sans text-sm font-medium text-ink-700 dark:text-ink-300 mb-3 flex items-center gap-2">
+                    <span className="text-lg">🏥</span> medRxiv
+                  </h4>
+                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                    {MEDRXIV_CATEGORIES.map((cat) => {
+                      const isSelected = medrxivCategory === cat.id
                       return (
                         <button
                           key={cat.id}
-                          onClick={() => setArxivCategory(cat.id)}
+                          onClick={() => setMedrxivCategory(cat.id)}
                           className={`
-                            w-full flex items-center justify-between p-3 border rounded-lg transition-all text-left
+                            w-full flex items-center justify-between p-2 rounded transition-all text-left
                             ${isSelected 
-                              ? 'border-ink-900 dark:border-ink-100 bg-ink-50 dark:bg-ink-800' 
-                              : 'border-ink-200 dark:border-ink-700 hover:border-ink-300 dark:hover:border-ink-600'
+                              ? 'bg-ink-100 dark:bg-ink-800 text-ink-900 dark:text-ink-100' 
+                              : 'hover:bg-ink-50 dark:hover:bg-ink-800/50 text-ink-600 dark:text-ink-400'
                             }
                           `}
                         >
-                          <span className={`font-sans text-sm ${isSelected ? 'text-ink-900 dark:text-ink-100 font-medium' : 'text-ink-600 dark:text-ink-400'}`}>
-                            {cat.label}
-                          </span>
-                          {isSelected && <Check className="w-4 h-4 text-ink-900 dark:text-ink-100" />}
+                          <span className="font-sans text-sm">{cat.label}</span>
+                          {isSelected && <Check className="w-4 h-4" />}
                         </button>
                       )
                     })}
                   </div>
                 </div>
-              ))}
-            </div>
+
+                {/* bioRxiv Topic */}
+                <div>
+                  <h4 className="font-sans text-sm font-medium text-ink-700 dark:text-ink-300 mb-3 flex items-center gap-2">
+                    <span className="text-lg">🧬</span> bioRxiv
+                  </h4>
+                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                    {BIORXIV_CATEGORIES.map((cat) => {
+                      const isSelected = biorxivCategory === cat.id
+                      return (
+                        <button
+                          key={cat.id}
+                          onClick={() => setBiorxivCategory(cat.id)}
+                          className={`
+                            w-full flex items-center justify-between p-2 rounded transition-all text-left
+                            ${isSelected 
+                              ? 'bg-ink-100 dark:bg-ink-800 text-ink-900 dark:text-ink-100' 
+                              : 'hover:bg-ink-50 dark:hover:bg-ink-800/50 text-ink-600 dark:text-ink-400'
+                            }
+                          `}
+                        >
+                          <span className="font-sans text-sm">{cat.label}</span>
+                          {isSelected && <Check className="w-4 h-4" />}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
           </section>
 
           {/* About */}

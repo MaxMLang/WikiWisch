@@ -6,6 +6,8 @@ const defaultState = {
   theme: 'system',
   categories: ['science', 'history', 'technology', 'arts', 'geography'],
   arxivCategory: 'cs.AI',
+  medrxivCategory: 'all',
+  biorxivCategory: 'all',
   tabOrder: ['wiki', 'arxiv', 'medrxiv', 'biorxiv', 'art', 'nasa', 'history'],
   enabledTabs: ['wiki', 'arxiv', 'medrxiv', 'art', 'nasa', 'history'], // biorxiv not enabled by default
   bookmarks: [],
@@ -21,7 +23,24 @@ export function useLocalStorage() {
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
       if (stored) {
-        return { ...defaultState, ...JSON.parse(stored) }
+        const parsed = JSON.parse(stored)
+        
+        // Migration: ensure new tabs are in tabOrder and enabledTabs
+        let tabOrder = parsed.tabOrder || defaultState.tabOrder
+        let enabledTabs = parsed.enabledTabs || defaultState.enabledTabs
+        
+        // Add medrxiv and biorxiv if missing from tabOrder
+        if (!tabOrder.includes('medrxiv')) {
+          const arxivIndex = tabOrder.indexOf('arxiv')
+          tabOrder = [...tabOrder.slice(0, arxivIndex + 1), 'medrxiv', 'biorxiv', ...tabOrder.slice(arxivIndex + 1)]
+        }
+        
+        // Add medrxiv to enabledTabs if missing (biorxiv stays disabled by default)
+        if (!enabledTabs.includes('medrxiv') && !enabledTabs.includes('biorxiv')) {
+          enabledTabs = [...enabledTabs, 'medrxiv']
+        }
+        
+        return { ...defaultState, ...parsed, tabOrder, enabledTabs }
       }
     } catch (e) {
       console.error('Failed to parse localStorage:', e)
@@ -60,6 +79,14 @@ export function useLocalStorage() {
 
   const setArxivCategory = useCallback((arxivCategory) => {
     setState((prev) => ({ ...prev, arxivCategory }))
+  }, [])
+
+  const setMedrxivCategory = useCallback((medrxivCategory) => {
+    setState((prev) => ({ ...prev, medrxivCategory }))
+  }, [])
+
+  const setBiorxivCategory = useCallback((biorxivCategory) => {
+    setState((prev) => ({ ...prev, biorxivCategory }))
   }, [])
 
   // Toggle tab enabled/disabled (at least one must remain enabled)
@@ -212,6 +239,8 @@ export function useLocalStorage() {
     theme: state.theme,
     categories: state.categories,
     arxivCategory: state.arxivCategory || defaultState.arxivCategory,
+    medrxivCategory: state.medrxivCategory || defaultState.medrxivCategory,
+    biorxivCategory: state.biorxivCategory || defaultState.biorxivCategory,
     tabOrder: state.tabOrder || defaultState.tabOrder,
     enabledTabs: state.enabledTabs || defaultState.enabledTabs,
     bookmarks: state.bookmarks,
@@ -224,6 +253,8 @@ export function useLocalStorage() {
     toggleCategory,
     setCategories,
     setArxivCategory,
+    setMedrxivCategory,
+    setBiorxivCategory,
     setTabOrder,
     toggleTab,
     // Wikipedia
