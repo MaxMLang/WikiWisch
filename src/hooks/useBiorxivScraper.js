@@ -52,19 +52,22 @@ async function fetchPapers(server, category, pageParam = 0) {
   
   const data = await response.json()
   
-  let papers = (data.collection || []).map((paper) => ({
-    id: paper.doi,
-    title: paper.title || 'Untitled',
-    authors: paper.authors ? paper.authors.split('; ').slice(0, 5) : [],
-    abstract: paper.abstract || '',
-    category: paper.category || '',
-    date: paper.date || '',
-    server: paper.server || server,
-    doi: paper.doi,
-    version: paper.version,
-    absLink: `https://www.${server}.org/content/${paper.doi}v${paper.version}`,
-    pdfLink: `https://www.${server}.org/content/${paper.doi}v${paper.version}.full.pdf`,
-  }))
+  let papers = (data.collection || [])
+    // Filter to only show papers from the requested server
+    .filter((paper) => (paper.server || server) === server)
+    .map((paper) => ({
+      id: paper.doi,
+      title: paper.title || 'Untitled',
+      authors: paper.authors ? paper.authors.split('; ').slice(0, 5) : [],
+      abstract: paper.abstract || '',
+      category: paper.category || '',
+      date: paper.date || '',
+      server: paper.server || server,
+      doi: paper.doi,
+      version: paper.version,
+      absLink: `https://www.${paper.server || server}.org/content/${paper.doi}v${paper.version}`,
+      pdfLink: `https://www.${paper.server || server}.org/content/${paper.doi}v${paper.version}.full.pdf`,
+    }))
   
   // Filter by category if not 'all'
   if (category && category !== 'all') {

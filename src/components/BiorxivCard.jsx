@@ -80,9 +80,14 @@ export default function BiorxivCard({ paper, index, isBookmarked, onToggleBookma
 
         {/* Footer */}
         <div className="flex items-center justify-between pt-3 border-t border-ink-100 dark:border-ink-800">
-          <span className="font-sans text-xs text-ink-400 dark:text-ink-500">
-            {formattedDate}
-          </span>
+          <div className="flex flex-col gap-0.5">
+            <span className="font-sans text-xs text-ink-400 dark:text-ink-500">
+              {formattedDate}
+            </span>
+            <span className="font-sans text-[10px] text-ink-300 dark:text-ink-600">
+              Subject to author license
+            </span>
+          </div>
           <div className="flex items-center gap-2">
             <a
               href={paper.pdfLink}
