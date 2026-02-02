@@ -88,8 +88,8 @@ export default function InfoModal({ isOpen, onClose }) {
               </div>
             </div>
             <p className="font-sans text-sm text-ink-600 dark:text-ink-300 leading-relaxed">
-              WikiWisch transforms Wikipedia into an infinite, TikTok-style feed of knowledge. 
-              Scroll through fascinating articles, save your favorites, and customize your topics—all 
+              WikiWisch serves you an endless feed of Wikipedia articles and arXiv research papers.
+              Scroll through fascinating content, save your favorites, and customize your topics—all 
               without creating an account. Your preferences and bookmarks are stored locally in your browser.
             </p>
           </section>
@@ -97,10 +97,10 @@ export default function InfoModal({ isOpen, onClose }) {
           {/* Data Attribution */}
           <section className="p-4 bg-ink-50 dark:bg-ink-800/50 rounded-lg">
             <h4 className="font-sans text-xs font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-400 mb-2">
-              Data Source
+              Data Sources
             </h4>
-            <p className="font-sans text-sm text-ink-600 dark:text-ink-300 leading-relaxed mb-3">
-              All content is fetched in real-time from the{' '}
+            <p className="font-sans text-sm text-ink-600 dark:text-ink-300 leading-relaxed mb-2">
+              Content is fetched in real-time from the{' '}
               <a 
                 href="https://en.wikipedia.org/api/rest_v1/" 
                 target="_blank" 
@@ -109,23 +109,23 @@ export default function InfoModal({ isOpen, onClose }) {
               >
                 Wikipedia REST API
               </a>
-              . Article summaries, images, and metadata are provided by the Wikimedia Foundation.
+              {' '}and{' '}
+              <a 
+                href="https://arxiv.org/help/api" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="underline font-medium hover:text-ink-900 dark:hover:text-ink-100"
+              >
+                arXiv API
+              </a>.
             </p>
             <p className="font-sans text-xs text-ink-500 dark:text-ink-400">
-              Content is available under{' '}
-              <a 
-                href="https://creativecommons.org/licenses/by-sa/3.0/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline hover:text-ink-700 dark:hover:text-ink-300"
-              >
-                CC BY-SA 3.0
-              </a>
+              Wikipedia content under CC BY-SA 3.0. arXiv papers subject to individual licenses.
             </p>
           </section>
 
-          {/* Wikipedia Credit */}
-          <section>
+          {/* Source Credits */}
+          <section className="space-y-3">
             <a
               href="https://www.wikipedia.org"
               target="_blank"
@@ -149,6 +149,35 @@ export default function InfoModal({ isOpen, onClose }) {
                   </p>
                   <p className="font-sans text-xs text-ink-500 dark:text-ink-400">
                     The Free Encyclopedia
+                  </p>
+                </div>
+              </div>
+              <ExternalLink className="w-4 h-4 text-ink-400 dark:text-ink-500 group-hover:text-ink-600 dark:group-hover:text-ink-300 transition-colors" />
+            </a>
+
+            <a
+              href="https://arxiv.org"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="
+                flex items-center justify-between p-4
+                border border-ink-200 dark:border-ink-700
+                rounded-lg
+                hover:border-ink-400 dark:hover:border-ink-500
+                hover:bg-ink-50 dark:hover:bg-ink-800/50
+                transition-all group
+              "
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
+                  <span className="font-sans text-sm font-bold text-red-600 dark:text-red-400">arXiv</span>
+                </div>
+                <div>
+                  <p className="font-sans text-sm font-medium text-ink-900 dark:text-ink-100">
+                    arXiv
+                  </p>
+                  <p className="font-sans text-xs text-ink-500 dark:text-ink-400">
+                    Open Access Research
                   </p>
                 </div>
               </div>

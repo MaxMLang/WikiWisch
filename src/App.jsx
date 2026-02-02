@@ -3,6 +3,7 @@ import { Settings, Bookmark, RefreshCw, Info, Heart } from 'lucide-react'
 import { useWikiScraper } from './hooks/useWikiScraper'
 import { useLocalStorage } from './hooks/useLocalStorage'
 import Feed from './components/Feed'
+import ArxivFeed from './components/ArxivFeed'
 import SettingsModal from './components/SettingsModal'
 import SavedArticles from './components/SavedArticles'
 import InfoModal from './components/InfoModal'
@@ -10,6 +11,7 @@ import Toast from './components/Toast'
 
 function App() {
   const [view, setView] = useState('feed') // 'feed' | 'saved'
+  const [activeTab, setActiveTab] = useState('wiki') // 'wiki' | 'arxiv'
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [infoOpen, setInfoOpen] = useState(false)
   const [toast, setToast] = useState({ visible: false, loading: false })
@@ -18,12 +20,17 @@ function App() {
     theme,
     categories,
     bookmarks,
+    arxivBookmarks,
     setTheme,
     toggleCategory,
     addBookmark,
     removeBookmark,
     isBookmarked,
     clearAllBookmarks,
+    addArxivBookmark,
+    removeArxivBookmark,
+    isArxivBookmarked,
+    clearAllArxivBookmarks,
   } = useLocalStorage()
 
   // Apply theme class to document
@@ -43,7 +50,7 @@ function App() {
     }
   }, [theme])
 
-  // Fetch articles based on selected categories
+  // Fetch Wikipedia articles based on selected categories
   const {
     data,
     isLoading,
@@ -60,12 +67,21 @@ function App() {
     return data.pages.flatMap((page) => page.articles)
   }, [data])
 
-  // Handle bookmark toggle
+  // Handle Wikipedia bookmark toggle
   const handleToggleBookmark = (article) => {
     if (isBookmarked(article.pageid)) {
       removeBookmark(article.pageid)
     } else {
       addBookmark(article)
+    }
+  }
+
+  // Handle arXiv bookmark toggle
+  const handleToggleArxivBookmark = (paper) => {
+    if (isArxivBookmarked(paper.id)) {
+      removeArxivBookmark(paper.id)
+    } else {
+      addArxivBookmark(paper)
     }
   }
 
@@ -80,17 +96,27 @@ function App() {
     }
   }, [refetch])
 
+  const showToast = useCallback((loading) => {
+    setToast({ visible: true, loading })
+  }, [])
+
   const hideToast = useCallback(() => {
     setToast({ visible: false, loading: false })
   }, [])
+
+  // Total bookmarks count
+  const totalBookmarks = bookmarks.length + arxivBookmarks.length
 
   // Show saved articles view
   if (view === 'saved') {
     return (
       <SavedArticles
         bookmarks={bookmarks}
+        arxivBookmarks={arxivBookmarks}
         onRemoveBookmark={removeBookmark}
+        onRemoveArxivBookmark={removeArxivBookmark}
         onClearAll={clearAllBookmarks}
+        onClearAllArxiv={clearAllArxivBookmarks}
         onBack={() => setView('feed')}
       />
     )
@@ -113,15 +139,17 @@ function App() {
 
           {/* Navigation */}
           <nav className="flex items-center gap-1">
-            <button
-              onClick={handleRefresh}
-              disabled={toast.loading}
-              className={`p-2.5 rounded-full hover:bg-ink-100 dark:hover:bg-ink-800 text-ink-600 dark:text-ink-400 transition-colors ${toast.loading ? 'opacity-50' : ''}`}
-              aria-label="Refresh feed"
-              title="Refresh feed"
-            >
-              <RefreshCw className={`w-5 h-5 ${toast.loading ? 'animate-spin' : ''}`} />
-            </button>
+            {activeTab === 'wiki' && (
+              <button
+                onClick={handleRefresh}
+                disabled={toast.loading}
+                className={`p-2.5 rounded-full hover:bg-ink-100 dark:hover:bg-ink-800 text-ink-600 dark:text-ink-400 transition-colors ${toast.loading ? 'opacity-50' : ''}`}
+                aria-label="Refresh feed"
+                title="Refresh feed"
+              >
+                <RefreshCw className={`w-5 h-5 ${toast.loading ? 'animate-spin' : ''}`} />
+              </button>
+            )}
             
             <button
               onClick={() => setView('saved')}
@@ -130,9 +158,9 @@ function App() {
               title="Saved articles"
             >
               <Bookmark className="w-5 h-5" />
-              {bookmarks.length > 0 && (
+              {totalBookmarks > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-ink-900 dark:bg-ink-100 text-white dark:text-ink-900 text-xs font-sans font-semibold rounded-full flex items-center justify-center">
-                  {bookmarks.length > 9 ? '9+' : bookmarks.length}
+                  {totalBookmarks > 9 ? '9+' : totalBookmarks}
                 </span>
               )}
             </button>
@@ -156,34 +184,90 @@ function App() {
             </button>
           </nav>
         </div>
+
+        {/* Tabs */}
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="flex gap-1 border-b border-transparent -mb-px">
+            <button
+              onClick={() => setActiveTab('wiki')}
+              className={`
+                px-4 py-2.5 font-sans text-sm font-medium
+                border-b-2 transition-colors
+                ${activeTab === 'wiki' 
+                  ? 'border-ink-900 dark:border-ink-100 text-ink-900 dark:text-ink-100' 
+                  : 'border-transparent text-ink-500 dark:text-ink-400 hover:text-ink-700 dark:hover:text-ink-300'
+                }
+              `}
+            >
+              Wikipedia
+            </button>
+            <button
+              onClick={() => setActiveTab('arxiv')}
+              className={`
+                px-4 py-2.5 font-sans text-sm font-medium
+                border-b-2 transition-colors
+                ${activeTab === 'arxiv' 
+                  ? 'border-ink-900 dark:border-ink-100 text-ink-900 dark:text-ink-100' 
+                  : 'border-transparent text-ink-500 dark:text-ink-400 hover:text-ink-700 dark:hover:text-ink-300'
+                }
+              `}
+            >
+              arXiv
+            </button>
+          </div>
+        </div>
       </header>
 
       {/* Main Content */}
       <main className="max-w-2xl mx-auto px-4 py-8">
-        {/* Hero Section - only show on first load */}
-        {articles.length === 0 && !isLoading && !error && (
-          <div className="text-center py-12 mb-8 animate-fade-in">
-            <h2 className="font-serif text-3xl md:text-4xl font-semibold text-ink-900 dark:text-ink-50 mb-4">
-              Endless Discovery
-            </h2>
-            <p className="font-sans text-lg text-ink-500 dark:text-ink-400 max-w-md mx-auto">
-              Scroll through an infinite stream of knowledge. Every scroll reveals something new to learn.
-            </p>
-          </div>
-        )}
+        {activeTab === 'wiki' ? (
+          <>
+            {/* Hero Section - only show on first load */}
+            {articles.length === 0 && !isLoading && !error && (
+              <div className="text-center py-12 mb-8 animate-fade-in">
+                <h2 className="font-serif text-3xl md:text-4xl font-semibold text-ink-900 dark:text-ink-50 mb-4">
+                  Endless Discovery
+                </h2>
+                <p className="font-sans text-lg text-ink-500 dark:text-ink-400 max-w-md mx-auto">
+                  Scroll through an infinite stream of knowledge. Every scroll reveals something new to learn.
+                </p>
+              </div>
+            )}
 
-        {/* Feed */}
-        <Feed
-          articles={articles}
-          isLoading={isLoading}
-          isFetchingNextPage={isFetchingNextPage}
-          hasNextPage={hasNextPage}
-          fetchNextPage={fetchNextPage}
-          error={error}
-          refetch={refetch}
-          isBookmarked={isBookmarked}
-          onToggleBookmark={handleToggleBookmark}
-        />
+            {/* Wikipedia Feed */}
+            <Feed
+              articles={articles}
+              isLoading={isLoading}
+              isFetchingNextPage={isFetchingNextPage}
+              hasNextPage={hasNextPage}
+              fetchNextPage={fetchNextPage}
+              error={error}
+              refetch={refetch}
+              isBookmarked={isBookmarked}
+              onToggleBookmark={handleToggleBookmark}
+            />
+          </>
+        ) : (
+          <>
+            {/* arXiv Header */}
+            <div className="mb-6">
+              <h2 className="font-serif text-2xl font-semibold text-ink-900 dark:text-ink-50 mb-2">
+                Latest Papers
+              </h2>
+              <p className="font-sans text-sm text-ink-500 dark:text-ink-400">
+                Fresh research from arXiv. Select your areas of interest below.
+              </p>
+            </div>
+
+            {/* arXiv Feed */}
+            <ArxivFeed
+              arxivBookmarks={arxivBookmarks}
+              isArxivBookmarked={isArxivBookmarked}
+              onToggleArxivBookmark={handleToggleArxivBookmark}
+              showToast={showToast}
+            />
+          </>
+        )}
       </main>
 
       {/* Footer */}
@@ -198,6 +282,15 @@ function App() {
               className="underline hover:text-ink-600 dark:hover:text-ink-300"
             >
               Wikipedia
+            </a>
+            {' & '}
+            <a 
+              href="https://arxiv.org" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="underline hover:text-ink-600 dark:hover:text-ink-300"
+            >
+              arXiv
             </a>
           </p>
           <p className="font-sans text-sm text-ink-400 dark:text-ink-500 flex items-center justify-center gap-1.5">

@@ -6,6 +6,7 @@ const defaultState = {
   theme: 'system',
   categories: ['science', 'history', 'technology', 'arts', 'geography'],
   bookmarks: [],
+  arxivBookmarks: [],
 }
 
 export function useLocalStorage() {
@@ -83,10 +84,49 @@ export function useLocalStorage() {
     setState((prev) => ({ ...prev, bookmarks: [] }))
   }, [])
 
+  // arXiv bookmark functions
+  const addArxivBookmark = useCallback((paper) => {
+    setState((prev) => {
+      if (prev.arxivBookmarks.some((b) => b.id === paper.id)) {
+        return prev
+      }
+      return {
+        ...prev,
+        arxivBookmarks: [
+          {
+            id: paper.id,
+            title: paper.title,
+            authors: paper.authors.slice(0, 3),
+            absLink: paper.absLink,
+            savedAt: Date.now(),
+          },
+          ...prev.arxivBookmarks,
+        ],
+      }
+    })
+  }, [])
+
+  const removeArxivBookmark = useCallback((id) => {
+    setState((prev) => ({
+      ...prev,
+      arxivBookmarks: prev.arxivBookmarks.filter((b) => b.id !== id),
+    }))
+  }, [])
+
+  const isArxivBookmarked = useCallback(
+    (id) => state.arxivBookmarks.some((b) => b.id === id),
+    [state.arxivBookmarks]
+  )
+
+  const clearAllArxivBookmarks = useCallback(() => {
+    setState((prev) => ({ ...prev, arxivBookmarks: [] }))
+  }, [])
+
   return {
     theme: state.theme,
     categories: state.categories,
     bookmarks: state.bookmarks,
+    arxivBookmarks: state.arxivBookmarks,
     setTheme,
     toggleCategory,
     setCategories,
@@ -94,5 +134,9 @@ export function useLocalStorage() {
     removeBookmark,
     isBookmarked,
     clearAllBookmarks,
+    addArxivBookmark,
+    removeArxivBookmark,
+    isArxivBookmarked,
+    clearAllArxivBookmarks,
   }
 }
