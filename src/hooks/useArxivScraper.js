@@ -20,9 +20,8 @@ export const ARXIV_CATEGORIES = [
   { id: 'eess.SP', label: 'Signal Processing', group: 'Engineering' },
 ]
 
-// arXiv API doesn't support CORS, so we use a proxy
-const ARXIV_API_BASE = 'https://export.arxiv.org/api/query'
-const CORS_PROXY = 'https://api.allorigins.win/raw?url='
+// Use our own API route to avoid CORS issues
+const ARXIV_API = '/api/arxiv'
 
 // Parse arXiv Atom XML response
 function parseArxivResponse(xmlText) {
@@ -87,12 +86,9 @@ async function fetchArxivPapers(categories, pageParam = 0) {
     search_query: searchQuery,
     start: start.toString(),
     max_results: batchSize.toString(),
-    sortBy: 'submittedDate',
-    sortOrder: 'descending',
   })
   
-  const arxivUrl = `${ARXIV_API_BASE}?${params}`
-  const response = await fetch(`${CORS_PROXY}${encodeURIComponent(arxivUrl)}`)
+  const response = await fetch(`${ARXIV_API}?${params}`)
   if (!response.ok) throw new Error('Failed to fetch from arXiv')
   
   const xmlText = await response.text()
