@@ -19,15 +19,19 @@ So I built WikiWisch. "Wisch" is German for swipe/wipe, felt fitting.
 
 ## What's in there
 
-The app pulls from five different sources:
+The app pulls from seven different sources:
 
 - **Wikipedia** — Random articles filtered by topic (history, science, tech, etc.)
-- **arXiv** — Latest research papers. Yes, actual academic papers. Pick your field.
+- **arXiv** — Latest research papers across CS, physics, math, biology, economics. Pick your field.
+- **medRxiv** — Health sciences preprints. Epidemiology, oncology, neurology, the whole medical research world.
+- **bioRxiv** — Biology preprints. Neuroscience, genetics, cell biology, evolution.
 - **Art Institute of Chicago** — Public domain artwork. Paintings, sculptures, the good stuff.
 - **NASA APOD** — Astronomy Picture of the Day. Space photos with explanations.
 - **On This Day** — What happened on today's date throughout history.
 
-You can reorder the tabs however you want. Everything's saved in your browser — bookmarks, preferences, tab order. No accounts, no backend, no cookies tracking you around the internet.
+You can enable/disable any feed you want — maybe you're not into art, or you only care about arXiv. Your call. Tabs can be reordered too. The research feeds (arXiv, medRxiv, bioRxiv) have topic filters so you can narrow down to your field.
+
+Everything's saved in your browser — bookmarks, preferences, tab order, topic selections. No accounts, no backend, no cookies tracking you around the internet.
 
 ## Running it yourself
 
@@ -46,6 +50,7 @@ This wouldn't exist without these APIs:
 
 - [Wikipedia REST API](https://en.wikipedia.org/api/rest_v1/) — Content under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/)
 - [arXiv API](https://arxiv.org/help/api) — Papers subject to individual author licenses
+- [bioRxiv/medRxiv API](https://api.biorxiv.org/) — Preprints, subject to individual licenses
 - [Art Institute of Chicago API](https://api.artic.edu/docs/) — Public domain images
 - [NASA APOD API](https://api.nasa.gov/) — Generally public domain
 - [Wikimedia Feed API](https://api.wikimedia.org/wiki/Feed_API/Reference/On_this_day) — On This Day data
