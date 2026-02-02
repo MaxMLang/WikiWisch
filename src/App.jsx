@@ -4,43 +4,48 @@ import { useWikiScraper } from './hooks/useWikiScraper'
 import { useLocalStorage } from './hooks/useLocalStorage'
 import Feed from './components/Feed'
 import ArxivFeed from './components/ArxivFeed'
+import ArtFeed from './components/ArtFeed'
+import NasaFeed from './components/NasaFeed'
+import HistoryFeed from './components/HistoryFeed'
 import SettingsModal from './components/SettingsModal'
 import SavedArticles from './components/SavedArticles'
 import InfoModal from './components/InfoModal'
 import Toast from './components/Toast'
 
+const ALL_TABS = {
+  wiki: { id: 'wiki', label: 'Wiki' },
+  arxiv: { id: 'arxiv', label: 'arXiv' },
+  art: { id: 'art', label: 'Art' },
+  nasa: { id: 'nasa', label: 'NASA' },
+  history: { id: 'history', label: 'Today' },
+}
+
 function App() {
-  const [view, setView] = useState('feed') // 'feed' | 'saved'
-  const [activeTab, setActiveTab] = useState('wiki') // 'wiki' | 'arxiv'
+  const [view, setView] = useState('feed')
+  const [activeTab, setActiveTab] = useState('wiki')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [infoOpen, setInfoOpen] = useState(false)
   const [toast, setToast] = useState({ visible: false, loading: false })
 
   const {
-    theme,
-    categories,
-    bookmarks,
-    arxivBookmarks,
-    setTheme,
-    toggleCategory,
-    addBookmark,
-    removeBookmark,
-    isBookmarked,
-    clearAllBookmarks,
-    addArxivBookmark,
-    removeArxivBookmark,
-    isArxivBookmarked,
-    clearAllArxivBookmarks,
+    theme, categories, tabOrder, setTheme, toggleCategory, setTabOrder,
+    // Wikipedia
+    bookmarks, addBookmark, removeBookmark, isBookmarked, clearAllBookmarks,
+    // arXiv
+    arxivBookmarks, addArxivBookmark, removeArxivBookmark, isArxivBookmarked, clearAllArxivBookmarks,
+    // Art
+    artBookmarks, addArtBookmark, removeArtBookmark, isArtBookmarked, clearAllArtBookmarks,
+    // NASA
+    nasaBookmarks, addNasaBookmark, removeNasaBookmark, isNasaBookmarked, clearAllNasaBookmarks,
+    // History
+    historyBookmarks, addHistoryBookmark, removeHistoryBookmark, isHistoryBookmarked, clearAllHistoryBookmarks,
   } = useLocalStorage()
 
-  // Apply theme class to document
   useEffect(() => {
     const root = document.documentElement
-    
     if (theme === 'system') {
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
       root.classList.toggle('dark', prefersDark)
-      
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
       const handleChange = (e) => root.classList.toggle('dark', e.matches)
       mediaQuery.addEventListener('change', handleChange)
@@ -50,42 +55,33 @@ function App() {
     }
   }, [theme])
 
-  // Fetch Wikipedia articles based on selected categories
-  const {
-    data,
-    isLoading,
-    isFetchingNextPage,
-    hasNextPage,
-    fetchNextPage,
-    error,
-    refetch,
-  } = useWikiScraper(categories)
+  const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage, error, refetch } = useWikiScraper(categories)
 
-  // Flatten paginated data into single array
   const articles = useMemo(() => {
     if (!data?.pages) return []
     return data.pages.flatMap((page) => page.articles)
   }, [data])
 
-  // Handle Wikipedia bookmark toggle
   const handleToggleBookmark = (article) => {
-    if (isBookmarked(article.pageid)) {
-      removeBookmark(article.pageid)
-    } else {
-      addBookmark(article)
-    }
+    isBookmarked(article.pageid) ? removeBookmark(article.pageid) : addBookmark(article)
   }
 
-  // Handle arXiv bookmark toggle
   const handleToggleArxivBookmark = (paper) => {
-    if (isArxivBookmarked(paper.id)) {
-      removeArxivBookmark(paper.id)
-    } else {
-      addArxivBookmark(paper)
-    }
+    isArxivBookmarked(paper.id) ? removeArxivBookmark(paper.id) : addArxivBookmark(paper)
   }
 
-  // Handle refresh with toast notification
+  const handleToggleArtBookmark = (artwork) => {
+    isArtBookmarked(artwork.id) ? removeArtBookmark(artwork.id) : addArtBookmark(artwork)
+  }
+
+  const handleToggleNasaBookmark = (entry) => {
+    isNasaBookmarked(entry.id) ? removeNasaBookmark(entry.id) : addNasaBookmark(entry)
+  }
+
+  const handleToggleHistoryBookmark = (event) => {
+    isHistoryBookmarked(event.id) ? removeHistoryBookmark(event.id) : addHistoryBookmark(event)
+  }
+
   const handleRefresh = useCallback(async () => {
     setToast({ visible: true, loading: true })
     try {
@@ -104,19 +100,26 @@ function App() {
     setToast({ visible: false, loading: false })
   }, [])
 
-  // Total bookmarks count
-  const totalBookmarks = bookmarks.length + arxivBookmarks.length
+  const totalBookmarks = bookmarks.length + arxivBookmarks.length + artBookmarks.length + nasaBookmarks.length + historyBookmarks.length
 
-  // Show saved articles view
   if (view === 'saved') {
     return (
       <SavedArticles
         bookmarks={bookmarks}
         arxivBookmarks={arxivBookmarks}
+        artBookmarks={artBookmarks}
+        nasaBookmarks={nasaBookmarks}
+        historyBookmarks={historyBookmarks}
         onRemoveBookmark={removeBookmark}
         onRemoveArxivBookmark={removeArxivBookmark}
+        onRemoveArtBookmark={removeArtBookmark}
+        onRemoveNasaBookmark={removeNasaBookmark}
+        onRemoveHistoryBookmark={removeHistoryBookmark}
         onClearAll={clearAllBookmarks}
         onClearAllArxiv={clearAllArxivBookmarks}
+        onClearAllArt={clearAllArtBookmarks}
+        onClearAllNasa={clearAllNasaBookmarks}
+        onClearAllHistory={clearAllHistoryBookmarks}
         onBack={() => setView('feed')}
       />
     )
@@ -124,10 +127,8 @@ function App() {
 
   return (
     <div className="min-h-screen bg-ink-50 dark:bg-ink-950 transition-colors duration-300">
-      {/* Header */}
       <header className="sticky top-0 z-40 bg-white/90 dark:bg-ink-950/90 backdrop-blur-md border-b border-ink-100 dark:border-ink-800">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
-          {/* Logo */}
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-ink-900 dark:bg-ink-100 rounded-lg flex items-center justify-center">
               <span className="font-serif text-lg font-bold text-white dark:text-ink-900">W</span>
@@ -137,7 +138,6 @@ function App() {
             </h1>
           </div>
 
-          {/* Navigation */}
           <nav className="flex items-center gap-1">
             {activeTab === 'wiki' && (
               <button
@@ -145,7 +145,6 @@ function App() {
                 disabled={toast.loading}
                 className={`p-2.5 rounded-full hover:bg-ink-100 dark:hover:bg-ink-800 text-ink-600 dark:text-ink-400 transition-colors ${toast.loading ? 'opacity-50' : ''}`}
                 aria-label="Refresh feed"
-                title="Refresh feed"
               >
                 <RefreshCw className={`w-5 h-5 ${toast.loading ? 'animate-spin' : ''}`} />
               </button>
@@ -154,8 +153,7 @@ function App() {
             <button
               onClick={() => setView('saved')}
               className="relative p-2.5 rounded-full hover:bg-ink-100 dark:hover:bg-ink-800 text-ink-600 dark:text-ink-400 transition-colors"
-              aria-label="View saved articles"
-              title="Saved articles"
+              aria-label="Saved"
             >
               <Bookmark className="w-5 h-5" />
               {totalBookmarks > 0 && (
@@ -168,8 +166,7 @@ function App() {
             <button
               onClick={() => setSettingsOpen(true)}
               className="p-2.5 rounded-full hover:bg-ink-100 dark:hover:bg-ink-800 text-ink-600 dark:text-ink-400 transition-colors"
-              aria-label="Open settings"
-              title="Settings"
+              aria-label="Settings"
             >
               <Settings className="w-5 h-5" />
             </button>
@@ -177,8 +174,7 @@ function App() {
             <button
               onClick={() => setInfoOpen(true)}
               className="p-2.5 rounded-full hover:bg-ink-100 dark:hover:bg-ink-800 text-ink-600 dark:text-ink-400 transition-colors"
-              aria-label="About WikiWisch"
-              title="About"
+              aria-label="About"
             >
               <Info className="w-5 h-5" />
             </button>
@@ -186,55 +182,45 @@ function App() {
         </div>
 
         {/* Tabs */}
-        <div className="max-w-2xl mx-auto px-4">
-          <div className="flex gap-1 border-b border-transparent -mb-px">
-            <button
-              onClick={() => setActiveTab('wiki')}
-              className={`
-                px-4 py-2.5 font-sans text-sm font-medium
-                border-b-2 transition-colors
-                ${activeTab === 'wiki' 
-                  ? 'border-ink-900 dark:border-ink-100 text-ink-900 dark:text-ink-100' 
-                  : 'border-transparent text-ink-500 dark:text-ink-400 hover:text-ink-700 dark:hover:text-ink-300'
-                }
-              `}
-            >
-              Wikipedia
-            </button>
-            <button
-              onClick={() => setActiveTab('arxiv')}
-              className={`
-                px-4 py-2.5 font-sans text-sm font-medium
-                border-b-2 transition-colors
-                ${activeTab === 'arxiv' 
-                  ? 'border-ink-900 dark:border-ink-100 text-ink-900 dark:text-ink-100' 
-                  : 'border-transparent text-ink-500 dark:text-ink-400 hover:text-ink-700 dark:hover:text-ink-300'
-                }
-              `}
-            >
-              arXiv
-            </button>
+        <div className="max-w-2xl mx-auto px-4 overflow-x-auto">
+          <div className="flex gap-1 border-b border-transparent -mb-px min-w-max">
+            {tabOrder.map((tabId) => {
+              const tab = ALL_TABS[tabId]
+              if (!tab) return null
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`
+                    px-4 py-2.5 font-sans text-sm font-medium whitespace-nowrap
+                    border-b-2 transition-colors
+                    ${activeTab === tab.id 
+                      ? 'border-ink-900 dark:border-ink-100 text-ink-900 dark:text-ink-100' 
+                      : 'border-transparent text-ink-500 dark:text-ink-400 hover:text-ink-700 dark:hover:text-ink-300'
+                    }
+                  `}
+                >
+                  {tab.label}
+                </button>
+              )
+            })}
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-2xl mx-auto px-4 py-8">
-        {activeTab === 'wiki' ? (
+        {activeTab === 'wiki' && (
           <>
-            {/* Hero Section - only show on first load */}
             {articles.length === 0 && !isLoading && !error && (
               <div className="text-center py-12 mb-8 animate-fade-in">
                 <h2 className="font-serif text-3xl md:text-4xl font-semibold text-ink-900 dark:text-ink-50 mb-4">
                   Endless Discovery
                 </h2>
                 <p className="font-sans text-lg text-ink-500 dark:text-ink-400 max-w-md mx-auto">
-                  Scroll through an infinite stream of knowledge. Every scroll reveals something new to learn.
+                  Scroll through an infinite stream of knowledge.
                 </p>
               </div>
             )}
-
-            {/* Wikipedia Feed */}
             <Feed
               articles={articles}
               isLoading={isLoading}
@@ -247,19 +233,14 @@ function App() {
               onToggleBookmark={handleToggleBookmark}
             />
           </>
-        ) : (
-          <>
-            {/* arXiv Header */}
-            <div className="mb-6">
-              <h2 className="font-serif text-2xl font-semibold text-ink-900 dark:text-ink-50 mb-2">
-                Latest Papers
-              </h2>
-              <p className="font-sans text-sm text-ink-500 dark:text-ink-400">
-                Fresh research from arXiv. Select your areas of interest below.
-              </p>
-            </div>
+        )}
 
-            {/* arXiv Feed */}
+        {activeTab === 'arxiv' && (
+          <>
+            <div className="mb-6">
+              <h2 className="font-serif text-2xl font-semibold text-ink-900 dark:text-ink-50 mb-2">Latest Papers</h2>
+              <p className="font-sans text-sm text-ink-500 dark:text-ink-400">Fresh research from arXiv</p>
+            </div>
             <ArxivFeed
               arxivBookmarks={arxivBookmarks}
               isArxivBookmarked={isArxivBookmarked}
@@ -268,68 +249,65 @@ function App() {
             />
           </>
         )}
+
+        {activeTab === 'art' && (
+          <>
+            <div className="mb-6">
+              <h2 className="font-serif text-2xl font-semibold text-ink-900 dark:text-ink-50 mb-2">Art Collection</h2>
+              <p className="font-sans text-sm text-ink-500 dark:text-ink-400">Public domain masterpieces from the Art Institute of Chicago</p>
+            </div>
+            <ArtFeed
+              isArtBookmarked={isArtBookmarked}
+              onToggleArtBookmark={handleToggleArtBookmark}
+              showToast={showToast}
+            />
+          </>
+        )}
+
+        {activeTab === 'nasa' && (
+          <>
+            <div className="mb-6">
+              <h2 className="font-serif text-2xl font-semibold text-ink-900 dark:text-ink-50 mb-2">Astronomy Picture of the Day</h2>
+              <p className="font-sans text-sm text-ink-500 dark:text-ink-400">Daily cosmic discoveries from NASA</p>
+            </div>
+            <NasaFeed
+              isNasaBookmarked={isNasaBookmarked}
+              onToggleNasaBookmark={handleToggleNasaBookmark}
+              showToast={showToast}
+            />
+          </>
+        )}
+
+        {activeTab === 'history' && (
+          <>
+            <HistoryFeed
+              isHistoryBookmarked={isHistoryBookmarked}
+              onToggleHistoryBookmark={handleToggleHistoryBookmark}
+              showToast={showToast}
+            />
+          </>
+        )}
       </main>
 
-      {/* Footer */}
       <footer className="border-t border-ink-100 dark:border-ink-800 py-8 mt-12">
         <div className="max-w-2xl mx-auto px-4 text-center space-y-2">
           <p className="font-sans text-sm text-ink-400 dark:text-ink-500">
             Content from{' '}
-            <a 
-              href="https://www.wikipedia.org" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="underline hover:text-ink-600 dark:hover:text-ink-300"
-            >
-              Wikipedia
-            </a>
-            {' & '}
-            <a 
-              href="https://arxiv.org" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="underline hover:text-ink-600 dark:hover:text-ink-300"
-            >
-              arXiv
-            </a>
+            <a href="https://www.wikipedia.org" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink-600 dark:hover:text-ink-300">Wikipedia</a>,{' '}
+            <a href="https://arxiv.org" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink-600 dark:hover:text-ink-300">arXiv</a>,{' '}
+            <a href="https://www.artic.edu" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink-600 dark:hover:text-ink-300">Art Institute of Chicago</a>,{' '}
+            <a href="https://api.nasa.gov" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink-600 dark:hover:text-ink-300">NASA</a>
           </p>
           <p className="font-sans text-sm text-ink-400 dark:text-ink-500 flex items-center justify-center gap-1.5">
             Made with <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500" /> by{' '}
-            <a 
-              href="https://github.com/MaxMLang" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="underline font-medium hover:text-ink-600 dark:hover:text-ink-300"
-            >
-              MaxMLang
-            </a>
+            <a href="https://github.com/MaxMLang" target="_blank" rel="noopener noreferrer" className="underline font-medium hover:text-ink-600 dark:hover:text-ink-300">MaxMLang</a>
           </p>
         </div>
       </footer>
 
-      {/* Settings Modal */}
-      <SettingsModal
-        isOpen={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        theme={theme}
-        setTheme={setTheme}
-        categories={categories}
-        toggleCategory={toggleCategory}
-      />
-
-      {/* Info Modal */}
-      <InfoModal
-        isOpen={infoOpen}
-        onClose={() => setInfoOpen(false)}
-      />
-
-      {/* Toast Notification */}
-      <Toast
-        isVisible={toast.visible}
-        isLoading={toast.loading}
-        message="Feed refreshed!"
-        onHide={hideToast}
-      />
+      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} theme={theme} setTheme={setTheme} categories={categories} toggleCategory={toggleCategory} tabOrder={tabOrder} setTabOrder={setTabOrder} />
+      <InfoModal isOpen={infoOpen} onClose={() => setInfoOpen(false)} />
+      <Toast isVisible={toast.visible} isLoading={toast.loading} message="Refreshed!" onHide={hideToast} />
     </div>
   )
 }
