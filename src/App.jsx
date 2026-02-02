@@ -107,7 +107,7 @@ function App() {
               <span className="font-serif text-lg font-bold text-white dark:text-ink-900">W</span>
             </div>
             <h1 className="font-serif text-xl font-semibold text-ink-900 dark:text-ink-50 hidden sm:block">
-              WikiScroll
+              WikiWisch
             </h1>
           </div>
 
@@ -149,7 +149,7 @@ function App() {
             <button
               onClick={() => setInfoOpen(true)}
               className="p-2.5 rounded-full hover:bg-ink-100 dark:hover:bg-ink-800 text-ink-600 dark:text-ink-400 transition-colors"
-              aria-label="About WikiScroll"
+              aria-label="About WikiWisch"
               title="About"
             >
               <Info className="w-5 h-5" />

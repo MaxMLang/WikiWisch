@@ -167,7 +167,7 @@ export default function SettingsModal({
               About
             </h3>
             <p className="font-sans text-sm text-ink-500 dark:text-ink-500 leading-relaxed">
-              WikiScroll brings you an endless stream of knowledge from Wikipedia. 
+              WikiWisch brings you an endless stream of knowledge from Wikipedia. 
               Your preferences and bookmarks are saved locally in your browser—no account needed.
             </p>
           </section>

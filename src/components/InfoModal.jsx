@@ -60,7 +60,7 @@ export default function InfoModal({ isOpen, onClose }) {
         {/* Header */}
         <div className="sticky top-0 bg-white dark:bg-ink-900 border-b border-ink-100 dark:border-ink-800 px-6 py-4 flex items-center justify-between">
           <h2 id="info-title" className="font-serif text-xl font-semibold text-ink-900 dark:text-ink-50">
-            About WikiScroll
+            About WikiWisch
           </h2>
           <button
             onClick={onClose}
@@ -80,7 +80,7 @@ export default function InfoModal({ isOpen, onClose }) {
               </div>
               <div>
                 <h3 className="font-serif text-lg font-semibold text-ink-900 dark:text-ink-50">
-                  WikiScroll
+                  WikiWisch
                 </h3>
                 <p className="font-sans text-sm text-ink-500 dark:text-ink-400">
                   Endless knowledge discovery
@@ -88,7 +88,7 @@ export default function InfoModal({ isOpen, onClose }) {
               </div>
             </div>
             <p className="font-sans text-sm text-ink-600 dark:text-ink-300 leading-relaxed">
-              WikiScroll transforms Wikipedia into an infinite, TikTok-style feed of knowledge. 
+              WikiWisch transforms Wikipedia into an infinite, TikTok-style feed of knowledge. 
               Scroll through fascinating articles, save your favorites, and customize your topics—all 
               without creating an account. Your preferences and bookmarks are stored locally in your browser.
             </p>

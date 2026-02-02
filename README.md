@@ -1,4 +1,4 @@
-# WikiScroll
+# WikiWisch
 
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
@@ -9,11 +9,11 @@ Doomscrolling, but you actually learn something.
 
 **👉 [Try it here](https://wikiscroll-kappa.vercel.app/)**
 
-![WikiScroll Demo](assets/demo.png)
+![WikiWisch Demo](assets/demo.png)
 
 ## What is this
 
-I spend way too much time on Wikipedia rabbit holes. So I made an app that just feeds me random articles. That's it. Scroll, read, bookmark the good ones.
+I spend way too much time on Wikipedia rabbit holes. So I made an app that just feeds me random articles. That's it. Swipe (or wischen/wisch in German), read, bookmark the good ones.
 
 No login, no tracking. Bookmarks stay in your browser.
 

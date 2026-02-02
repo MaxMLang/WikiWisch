@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 
-const STORAGE_KEY = 'wikiscroll_data'
+const STORAGE_KEY = 'wikiwisch_data'
 
 const defaultState = {
   theme: 'system',
