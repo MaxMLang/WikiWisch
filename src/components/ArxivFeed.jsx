@@ -1,20 +1,18 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { Loader2, AlertCircle, RefreshCw, ChevronDown, Check } from 'lucide-react'
+import { useEffect, useRef, useCallback, useMemo } from 'react'
+import { Loader2, AlertCircle, RefreshCw } from 'lucide-react'
 import { useArxivScraper, ARXIV_CATEGORIES } from '../hooks/useArxivScraper'
 import ArxivCard from './ArxivCard'
 
 export default function ArxivFeed({ 
+  arxivCategory,
   arxivBookmarks,
   isArxivBookmarked,
   onToggleArxivBookmark,
-  showToast
+  showToast,
+  onOpenSettings
 }) {
-  const [selectedCategory, setSelectedCategory] = useState('cs.AI')
-  const [showCategoryPicker, setShowCategoryPicker] = useState(false)
   const loadMoreRef = useRef(null)
-  const pickerRef = useRef(null)
 
-  // Pass as array for the hook (keeps API consistent)
   const {
     data,
     isLoading,
@@ -23,15 +21,13 @@ export default function ArxivFeed({
     fetchNextPage,
     error,
     refetch,
-  } = useArxivScraper(selectedCategory ? [selectedCategory] : [])
+  } = useArxivScraper(arxivCategory ? [arxivCategory] : [])
 
-  // Flatten paginated data
   const papers = useMemo(() => {
     if (!data?.pages) return []
     return data.pages.flatMap((page) => page.papers)
   }, [data])
 
-  // Intersection Observer for infinite scroll
   const handleObserver = useCallback((entries) => {
     const [target] = entries
     if (target.isIntersecting && hasNextPage && !isFetchingNextPage) {
@@ -53,39 +49,14 @@ export default function ArxivFeed({
     return () => observer.disconnect()
   }, [handleObserver])
 
-  // Close picker on click outside
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (pickerRef.current && !pickerRef.current.contains(e.target)) {
-        setShowCategoryPicker(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
-  const selectCategory = (catId) => {
-    setSelectedCategory(catId)
-    setShowCategoryPicker(false)
-  }
-
   const handleRefresh = async () => {
     showToast(true)
     await refetch()
     showToast(false)
   }
 
-  // Group categories
-  const groupedCategories = ARXIV_CATEGORIES.reduce((acc, cat) => {
-    if (!acc[cat.group]) acc[cat.group] = []
-    acc[cat.group].push(cat)
-    return acc
-  }, {})
+  const currentCategory = ARXIV_CATEGORIES.find((c) => c.id === arxivCategory)
 
-  // Get current category label
-  const currentCategory = ARXIV_CATEGORIES.find((c) => c.id === selectedCategory)
-
-  // Loading state
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -100,7 +71,6 @@ export default function ArxivFeed({
     )
   }
 
-  // Error state
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-4">
@@ -110,15 +80,7 @@ export default function ArxivFeed({
         </p>
         <button
           onClick={handleRefresh}
-          className="
-            flex items-center gap-2 px-6 py-3
-            font-sans font-medium text-sm
-            bg-ink-900 dark:bg-ink-100
-            text-white dark:text-ink-900
-            rounded-full
-            hover:bg-ink-700 dark:hover:bg-ink-300
-            transition-colors
-          "
+          className="flex items-center gap-2 px-6 py-3 font-sans font-medium text-sm bg-ink-900 dark:bg-ink-100 text-white dark:text-ink-900 rounded-full hover:bg-ink-700 dark:hover:bg-ink-300 transition-colors"
         >
           <RefreshCw className="w-4 h-4" />
           Try again
@@ -129,79 +91,30 @@ export default function ArxivFeed({
 
   return (
     <div className="w-full">
-      {/* Category Selector */}
-      <div className="mb-8 relative" ref={pickerRef}>
-        <button
-          onClick={() => setShowCategoryPicker(!showCategoryPicker)}
-          className="
-            flex items-center gap-2 px-4 py-2.5
-            bg-white dark:bg-ink-900
-            border border-ink-200 dark:border-ink-700
-            rounded-lg
-            hover:border-ink-400 dark:hover:border-ink-500
-            transition-colors
-            w-full sm:w-auto
-          "
-        >
-          <span className="font-sans text-sm text-ink-600 dark:text-ink-400">
-            Topic:
-          </span>
-          <span className="font-sans text-sm font-medium text-ink-900 dark:text-ink-100">
-            {currentCategory?.label || 'Select topic'}
-          </span>
-          <ChevronDown className={`w-4 h-4 text-ink-400 transition-transform ${showCategoryPicker ? 'rotate-180' : ''}`} />
-        </button>
+      {currentCategory && (
+        <p className="font-sans text-sm text-ink-500 dark:text-ink-400 mb-6">
+          Showing: <span className="font-medium text-ink-700 dark:text-ink-300">{currentCategory.label}</span>
+          <span className="text-ink-400 dark:text-ink-500"> · </span>
+          <button 
+            onClick={onOpenSettings}
+            className="text-ink-600 dark:text-ink-300 underline hover:text-ink-900 dark:hover:text-ink-100 transition-colors"
+          >
+            Change in Settings
+          </button>
+        </p>
+      )}
 
-        {/* Dropdown */}
-        {showCategoryPicker && (
-          <div className="
-            absolute top-full left-0 mt-2 z-50
-            w-full sm:w-80
-            max-h-80 overflow-y-auto
-            bg-white dark:bg-ink-900
-            border border-ink-200 dark:border-ink-700
-            rounded-lg shadow-xl
-            animate-fade-in
-          ">
-            {Object.entries(groupedCategories).map(([group, cats]) => (
-              <div key={group} className="border-b border-ink-100 dark:border-ink-800 last:border-0">
-                <p className="px-4 py-2 text-xs font-sans font-semibold uppercase tracking-wider text-ink-400 dark:text-ink-500 bg-ink-50 dark:bg-ink-800/50">
-                  {group}
-                </p>
-                {cats.map((cat) => {
-                  const isSelected = selectedCategory === cat.id
-                  return (
-                    <button
-                      key={cat.id}
-                      onClick={() => selectCategory(cat.id)}
-                      className={`
-                        w-full flex items-center justify-between px-4 py-2.5
-                        text-left text-sm font-sans
-                        hover:bg-ink-50 dark:hover:bg-ink-800
-                        transition-colors
-                        ${isSelected ? 'text-ink-900 dark:text-ink-100 bg-ink-50 dark:bg-ink-800' : 'text-ink-600 dark:text-ink-400'}
-                      `}
-                    >
-                      <span>{cat.label}</span>
-                      {isSelected && <Check className="w-4 h-4" />}
-                    </button>
-                  )
-                })}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Papers */}
       {papers.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-4">
           <p className="font-serif text-lg text-ink-500 dark:text-ink-400 text-center">
             No papers found for this topic.
           </p>
-          <p className="font-sans text-sm text-ink-400 dark:text-ink-500 text-center">
-            Try selecting a different category.
-          </p>
+          <button
+            onClick={onOpenSettings}
+            className="font-sans text-sm text-ink-600 dark:text-ink-300 underline hover:text-ink-900 dark:hover:text-ink-100 transition-colors"
+          >
+            Try a different category in Settings
+          </button>
         </div>
       ) : (
         <div className="space-y-2">
@@ -217,7 +130,6 @@ export default function ArxivFeed({
         </div>
       )}
 
-      {/* Load More Trigger */}
       <div 
         ref={loadMoreRef} 
         className="w-full py-12 flex items-center justify-center"

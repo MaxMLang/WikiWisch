@@ -30,7 +30,7 @@ function App() {
   const lastScrollY = useRef(0)
 
   const {
-    theme, categories, tabOrder, setTheme, toggleCategory, setTabOrder,
+    theme, categories, arxivCategory, tabOrder, setTheme, toggleCategory, setArxivCategory, setTabOrder,
     // Wikipedia
     bookmarks, addBookmark, removeBookmark, isBookmarked, clearAllBookmarks,
     // arXiv
@@ -264,10 +264,12 @@ function App() {
               <p className="font-sans text-sm text-ink-500 dark:text-ink-400">Fresh research from arXiv</p>
             </div>
             <ArxivFeed
+              arxivCategory={arxivCategory}
               arxivBookmarks={arxivBookmarks}
               isArxivBookmarked={isArxivBookmarked}
               onToggleArxivBookmark={handleToggleArxivBookmark}
               showToast={showToast}
+              onOpenSettings={() => setSettingsOpen(true)}
             />
           </>
         )}
@@ -327,7 +329,7 @@ function App() {
         </div>
       </footer>
 
-      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} theme={theme} setTheme={setTheme} categories={categories} toggleCategory={toggleCategory} tabOrder={tabOrder} setTabOrder={setTabOrder} />
+      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} theme={theme} setTheme={setTheme} categories={categories} toggleCategory={toggleCategory} arxivCategory={arxivCategory} setArxivCategory={setArxivCategory} tabOrder={tabOrder} setTabOrder={setTabOrder} />
       <InfoModal isOpen={infoOpen} onClose={() => setInfoOpen(false)} />
       <Toast isVisible={toast.visible} isLoading={toast.loading} message="Refreshed!" onHide={hideToast} />
     </div>

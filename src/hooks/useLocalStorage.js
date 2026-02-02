@@ -5,6 +5,7 @@ const STORAGE_KEY = 'wikiwisch_data'
 const defaultState = {
   theme: 'system',
   categories: ['science', 'history', 'technology', 'arts', 'geography'],
+  arxivCategory: 'cs.AI',
   tabOrder: ['wiki', 'arxiv', 'art', 'nasa', 'history'],
   bookmarks: [],
   arxivBookmarks: [],
@@ -53,6 +54,10 @@ export function useLocalStorage() {
 
   const setTabOrder = useCallback((tabOrder) => {
     setState((prev) => ({ ...prev, tabOrder }))
+  }, [])
+
+  const setArxivCategory = useCallback((arxivCategory) => {
+    setState((prev) => ({ ...prev, arxivCategory }))
   }, [])
 
   // Wikipedia bookmarks
@@ -163,6 +168,7 @@ export function useLocalStorage() {
   return {
     theme: state.theme,
     categories: state.categories,
+    arxivCategory: state.arxivCategory || defaultState.arxivCategory,
     tabOrder: state.tabOrder || defaultState.tabOrder,
     bookmarks: state.bookmarks,
     arxivBookmarks: state.arxivBookmarks,
@@ -172,6 +178,7 @@ export function useLocalStorage() {
     setTheme,
     toggleCategory,
     setCategories,
+    setArxivCategory,
     setTabOrder,
     // Wikipedia
     addBookmark, removeBookmark, isBookmarked, clearAllBookmarks,

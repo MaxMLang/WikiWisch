@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { X, Sun, Moon, Monitor, Check, ChevronUp, ChevronDown, GripVertical } from 'lucide-react'
+import { ARXIV_CATEGORIES } from '../hooks/useArxivScraper'
 
 const AVAILABLE_CATEGORIES = [
   { id: 'science', label: 'Science', emoji: '🔬' },
@@ -33,6 +34,8 @@ export default function SettingsModal({
   setTheme, 
   categories, 
   toggleCategory,
+  arxivCategory,
+  setArxivCategory,
   tabOrder,
   setTabOrder
 }) {
@@ -194,6 +197,54 @@ export default function SettingsModal({
                   </button>
                 )
               })}
+            </div>
+          </section>
+
+          {/* arXiv Topic */}
+          <section>
+            <h3 className="font-sans text-sm font-semibold uppercase tracking-wider text-ink-500 dark:text-ink-400 mb-2">
+              arXiv Topic
+            </h3>
+            <p className="font-sans text-sm text-ink-500 dark:text-ink-500 mb-4">
+              Select research area for arXiv papers
+            </p>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {Object.entries(
+                ARXIV_CATEGORIES.reduce((acc, cat) => {
+                  if (!acc[cat.group]) acc[cat.group] = []
+                  acc[cat.group].push(cat)
+                  return acc
+                }, {})
+              ).map(([group, cats]) => (
+                <div key={group}>
+                  <p className="font-sans text-xs font-semibold uppercase tracking-wider text-ink-400 dark:text-ink-500 mb-2 mt-3 first:mt-0">
+                    {group}
+                  </p>
+                  <div className="space-y-1">
+                    {cats.map((cat) => {
+                      const isSelected = arxivCategory === cat.id
+                      return (
+                        <button
+                          key={cat.id}
+                          onClick={() => setArxivCategory(cat.id)}
+                          className={`
+                            w-full flex items-center justify-between p-3 border rounded-lg transition-all text-left
+                            ${isSelected 
+                              ? 'border-ink-900 dark:border-ink-100 bg-ink-50 dark:bg-ink-800' 
+                              : 'border-ink-200 dark:border-ink-700 hover:border-ink-300 dark:hover:border-ink-600'
+                            }
+                          `}
+                        >
+                          <span className={`font-sans text-sm ${isSelected ? 'text-ink-900 dark:text-ink-100 font-medium' : 'text-ink-600 dark:text-ink-400'}`}>
+                            {cat.label}
+                          </span>
+                          {isSelected && <Check className="w-4 h-4 text-ink-900 dark:text-ink-100" />}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           </section>
 
