@@ -22,7 +22,7 @@ export const ARXIV_CATEGORIES = [
 
 // arXiv API doesn't support CORS, so we use a proxy
 const ARXIV_API_BASE = 'https://export.arxiv.org/api/query'
-const CORS_PROXY = 'https://corsproxy.io/?'
+const CORS_PROXY = 'https://api.allorigins.win/raw?url='
 
 // Parse arXiv Atom XML response
 function parseArxivResponse(xmlText) {
